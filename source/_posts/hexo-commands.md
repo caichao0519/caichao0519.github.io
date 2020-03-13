@@ -18,7 +18,7 @@ top:80
 
 <!--more-->
 
-# 常用命名
+# 常用命令
 
 `hexo n "my-first-blog" == hexo my-first-blog "我的博客" #新建文章`
 

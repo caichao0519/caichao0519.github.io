@@ -131,6 +131,7 @@ menu:
   categories: /categories/ || th
   archives: /archives/ || archive
   #schedule: /schedule/ || calendar
+  tools: /tools/ || tools
   sitemap: /sitemap.xml || sitemap
   #commonweal: /404/ || heartbeat
 
