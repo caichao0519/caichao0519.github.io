@@ -4,9 +4,8 @@ tags:
 - nas
 abbrlink: 92ef66de
 date: 2020-03-09 19:27:13
-top: true
+top: 90
 categories: 
-- 技术
 - NAS
 ---
 
