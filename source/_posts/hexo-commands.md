@@ -13,19 +13,17 @@ top:80
 
 
 # 前言
-
 汇总一下Hexo的使用命令，方便查找。
+# 常用命令
+hexo n "my-first-blog" == hexo  new "my-first-blog" #新建文章
+hexo g == hexo generate #生成静态页面,生成public文件夹
+hexo s == hexo server  #以静态模式启动页面预览 http://localhost:4000
+hexo c == hexo clean #清除缓存 ,网页正常情况下可以忽略此条命令,执行该指令后,会删掉站点根目录下的public文件夹
+hexo d == hexo deploy #部署到github pages
 
+hexo p == hexo publish
 <!--more-->
 
-# 常用命令
+# 其他命令
+hexo n page “tags” == hexo new page “tags” #新建页面
 
-`hexo n "my-first-blog" == hexo my-first-blog "我的博客" #新建文章`
-
-`hexo g == hexo generate #生成`静态页面
-`hexo s == hexo server  #以静态模式启动页面预览 http://localhost:4000`
-`hexo d == hexo deploy #部署`到github pages
-
-
-
-`hexo p == hexo publish`
