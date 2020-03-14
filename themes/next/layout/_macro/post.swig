@@ -165,6 +165,9 @@
     {#################}
     {### POST BODY ###}
     {#################}
+    .post-body a {
+  color: #428BCA;//字体为蓝色
+}
     <div class="post-body{%- if post.direction and post.direction.toLowerCase() === 'rtl' %} rtl{%- endif %}" itemprop="articleBody">
 
       {# Gallery support #}

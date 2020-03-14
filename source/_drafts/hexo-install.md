@@ -1,3 +1,6 @@
+---
+abbrlink: c299787a
+---
 1、安装node.js
 
 https://nodejs.org/en/download/

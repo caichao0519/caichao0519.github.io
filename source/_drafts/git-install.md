@@ -1,3 +1,6 @@
+---
+abbrlink: 42009ab4
+---
 下载git
 
 https://git-scm.com/downloads

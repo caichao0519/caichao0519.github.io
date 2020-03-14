@@ -51,4 +51,4 @@ categories:
 
 # 整体结构
 
-{% img https://nextcloud.cc2048.top:8443/s/H7CZKmdxjdgxR9q/preview   "点击查看大图" %}
+![整体结构]( https://nextcloud.cc2048.top:8443/s/H7CZKmdxjdgxR9q/preview "点击查看大图") 
