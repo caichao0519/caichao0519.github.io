@@ -3,11 +3,11 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
+title: cc's blog
+subtitle: '123'
+description: '234'
 keywords:
-author: Simon
+author: cc
 language: zh-CN
 timezone: 'UTC'
 

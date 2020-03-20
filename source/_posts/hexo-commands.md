@@ -17,7 +17,7 @@ hexo的命令并不算多，常用命令更少，基本使用一遍就能记得�
 
 # 常用命令
 新建文章
-`hexo n "my-first-blog" == hexo  new "my-first-blog"` 
+`hexo n "my-first-blog"` 
 
 清除缓存、静态文件并生成网站静态文件
 `hexo c && hexo g` 

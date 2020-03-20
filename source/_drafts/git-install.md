@@ -10,8 +10,8 @@ https://git-scm.com/downloads
 ## 配置用户名和邮箱
 
 ~~~shell
-git config --global user.name "cc"
-git config --global user.email "caichao198805@gmail.com"
+git config --global user.name "XXX"
+git config --global user.email "XXXXXX@gmail.com"
 ~~~
 
 注：此用户名和邮箱是 git 提交代码时用来显示你身份和联系方式的，并不是 GitHub 用户名和邮箱。
@@ -72,3 +72,29 @@ ssh -T git@github.com
 
 `Hi XXX! You've successfully authenticated, but GitHub does not provide shell access.`
 
+# [git设置、查看、取消代理](https://www.cnblogs.com/yongy1030/p/11699086.html)
+
+设置代理：
+
+```
+git config --global http.proxy 'socks5://127.0.0.1:1080' 
+git config --global https.proxy 'socks5://127.0.0.1:1080'
+```
+
+ 
+
+查看代理：
+
+```
+git config --global --get http.proxy
+git config --global --get https.proxy
+```
+
+ 
+
+取消代理：
+
+```
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+```
