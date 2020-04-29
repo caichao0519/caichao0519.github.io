@@ -1,7 +1,7 @@
 ---
 title: 家庭NAS折腾记-综述
 tags: 
-- nas
+- NAS
 abbrlink: 92ef66de
 date: 2020-03-09 19:27:13
 top: 90

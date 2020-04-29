@@ -1,7 +1,17 @@
 ---
+tags:
+  - Git
+categories:
+  - 软件
+  - Git
+
 abbrlink: 42009ab4
+date: 2020-04-29 20:23:18
+title: Git本地环境搭建
+top: false
 ---
-下载git
+
+## 下载安装Git
 
 https://git-scm.com/downloads
 
@@ -23,13 +33,13 @@ git config user.name
 git config user.email
 ~~~
 
-
+<!--more-->
 
 ## 配置SSH秘钥
 
-**1、运行 Git Bash**
+1、运行 Git Bash
 
-2、**生成秘钥对**
+2、生成秘钥对
 
 查看是否存在秘钥，windows秘钥存放位置：
 
@@ -37,11 +47,10 @@ git config user.email
 C:/Users/用户名/.ssh
 ```
 
-3、**生成秘钥**
+3、生成秘钥
 
 ```
 ssh-keygen -t rsa -C "caichao198805@gmail.com"
-
 ```
 
 一路Enter就行，公钥位置为
@@ -68,33 +77,6 @@ cat ~/.ssh/id_rsa.pub
 ssh -T git@github.com
 ```
 
-看见一下就是成功：
+看见以下就是成功：
 
 `Hi XXX! You've successfully authenticated, but GitHub does not provide shell access.`
-
-# [git设置、查看、取消代理](https://www.cnblogs.com/yongy1030/p/11699086.html)
-
-设置代理：
-
-```
-git config --global http.proxy 'socks5://127.0.0.1:1080' 
-git config --global https.proxy 'socks5://127.0.0.1:1080'
-```
-
- 
-
-查看代理：
-
-```
-git config --global --get http.proxy
-git config --global --get https.proxy
-```
-
- 
-
-取消代理：
-
-```
-git config --global --unset http.proxy
-git config --global --unset https.proxy
-```
