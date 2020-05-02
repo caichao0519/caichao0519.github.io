@@ -20,7 +20,7 @@ hexo的命令并不算多，常用命令更少，基本使用一遍就能记得�
 `hexo n "my-first-blog"` 
 
 清除缓存、静态文件并生成网站静态文件
-`hexo c && hexo g` 
+`hexo clean && hexo g` 
 `hexo g -f`
 
 生成网站静态文件并部署到git
@@ -70,11 +70,11 @@ hexo g
 ```
 
 生成网站静态文件到public目录；
-hexo g -f强制重新生成文件， 效果类似于hexo c && hexo g；
+`hexo g -f`强制重新生成文件， 效果类似于`hexo c && hexo g`；
 `hexo g`是`hexo generate`的简写，命令效果一样。
 
 ```
-hexo c
+hexo clean
 ```
 
 清除缓存文件 `db.json`和已生成的静态文件 `public`；
