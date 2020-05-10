@@ -88,7 +88,7 @@ grep -v "^#" /etc/squid/squid.conf |grep -v "^$" >  /etc/squid/squid.conf
 
 ```bash
 # http_port 3128
-https_port 8443 tls-cert=/ssl/2225470_www.domain.com_public.crt tls-key=/ssl/2225470_www.domain.com.key
+https_port 8443 tls-cert=/path/to/ssl/domain.com.cert tls-key=/path/to/domain.com.key
 ```
 
 吐槽：squid3.x和squid4.x配置有个微小的修改，3.x中直接配置`cert=xxx.crt key=xxx.key`，squid4就变成`tls-cert=xxx.tls-crt key=xxx.key`了，怎么都喜欢不向下兼容呢。
@@ -270,7 +270,7 @@ http_access deny all
 #http_access allow all
 
 # Squid normally listens to port 3128
-https_port 10048 tls-cert=xxx.crt tls-key=xxx.key
+https_port 8443 tls-cert=/path/to/ssl/domain.com.cert tls-key=/path/to/domain.com.key
 
 # Uncomment and adjust the following to add a disk cache directory.
 #cache_dir ufs /var/spool/squid 100 16 256

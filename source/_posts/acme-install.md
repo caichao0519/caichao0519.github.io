@@ -92,8 +92,6 @@ DNS方式需要在域名商添加一条TXT的解析记录，以验证域名所�
 
 ![Cloudflare API key](https://pic.cc2048.top:8443/i/2020/05/02/12wd6zz.png)
 
-Cloudflare是可以对单域创建Tokens的，如果不放心使用全局Key，可以创建单域的。
-
 ### 设置环境变量
 
 就是Cloudflare的全局Key和注册邮箱
@@ -113,6 +111,23 @@ export CF_Email="xxxx@sss.com"
 acme.sh --issue --dns dns_cf -d domain.com -d *.domain.com
 ```
 
+### API Token 方式
+
+Cloudflare是可以对单域创建Tokens的，如果不放心使用全局Key，可以使用API Token。
+
+但是在使用的时候需要注意权限配置及作用范围
+
+| Permissions         | Resources |
+| ------------------- | --------- |
+| Zone.Zone, Zone.DNS | All zones |
+
+在配置变量时只需要配置`CF_Token` `CF_Account_ID`
+
+```
+export CF_Token="sdfsdfsdfljlbjkljlkjsdfoiwje"
+export CF_Account_ID="sdfsdfsdfljlbjkljlkjsdfoiwje"
+```
+
 # 安装证书
 
 默认生成的证书都放在安装目录下: `~/.acme.sh/`, 请不要直接使用此目录下的文件, 例如: 不要直接让 nginx/apache 的配置文件使用这下面的文件. 这里面的文件都是内部使用, 而且目录结构可能会变化.
@@ -121,13 +136,24 @@ acme.sh --issue --dns dns_cf -d domain.com -d *.domain.com
 
 ```bash
 acme.sh --installcert -d domain.com \
---key-file       /path/to/keyfile/in/nginx/key.pem  \
---fullchain-file /path/to/fullchain/nginx/cert.pem \
---reloadcmd     "service nginx force-reload"
+--key-file       /path/to/ssl/domain.com.key  \
+--fullchain-file /path/to/ssl/domain.com.cert \
+--reloadcmd     "systemctl force-reload nginx squid"
 ```
 
 证书每次续期后会自动重启nginx，使用`force-reload`而不是`reload`
 
-# 证书更新
+# 更新相关
+
+## 证书更新
 
 目前证书在 60 天以后会自动更新, 无需任何操作. 都是自动更新的
+
+## 更新acme.sh
+
+配置自动更新acme.sh程序
+
+```bash
+acme.sh  --upgrade  --auto-upgrade
+```
+
