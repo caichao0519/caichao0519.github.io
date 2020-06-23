@@ -79,7 +79,7 @@ grep -v "^#" /etc/squid/squid.conf |grep -v "^$"
 
 ```bash
 mv /etc/squid/squid.conf /etc/squid/squid.conf.bak
-grep -v "^#" /etc/squid/squid.conf |grep -v "^$" >  /etc/squid/squid.conf
+grep -v "^#" /etc/squid/squid.conf.bak |grep -v "^$" >  /etc/squid/squid.conf
 ```
 
 ## 端口及https协议
