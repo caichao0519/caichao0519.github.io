@@ -53,6 +53,14 @@ Squid是一个Web缓存代理，支持处理HTTP，FTP，GOPHER，SSL和WAIS等�
   - 降低源站服务器的负载。
   - 隐藏源站真实ip。
 
+# 更新系统
+
+**更新系统源和软件包**
+
+```bash
+apt-get update && apt-get upgrade
+```
+
 # 安装服务
 
 Debian安装
