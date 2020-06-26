@@ -4,8 +4,12 @@ tags:
   - v2ray
   - vps
   - bbr
+  - nginx
+  - caddy
+  - cloudflare
+  - cdn
 categories:
-  - VPS & 域名
+  - VPS
 abbrlink: 869e664c
 date: 2020-05-03 00:32:15
 top: false

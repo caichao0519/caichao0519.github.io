@@ -2,8 +2,10 @@
 title: acme.sh申请免费证书
 tags:
   - acme
+  - domain
+  - Encrypt
 categories:
-  - VPS & 域名
+  - 域名
 top: false
 abbrlink: bd4e69fb
 date: 2020-05-03 00:13:16
