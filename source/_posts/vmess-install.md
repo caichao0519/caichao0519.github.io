@@ -83,7 +83,7 @@ nano /etc/v2ray/config.json
                 },
                 "settings": {
                         "clients": [{
-                                "id": "534cd6db-c7b0-4642-bd23-0f2a82f1ed23",
+                                "id": "********-c7b0-4642-bd23-********",
                                 "level": 0,
                                 "alterId": 32
                         }]
@@ -92,7 +92,7 @@ nano /etc/v2ray/config.json
                         "network": "ws",
                         "security": "auto",
                         "wsSettings": {
-                                "path": "/blog/CC"
+                                "path": "/****/***"
                         }
                 }
         },
@@ -324,15 +324,139 @@ Android：V2RayNG [Play Store ](https://play.google.com/store/apps/details?id=co
 
 Windows：Windows 只推荐[V2RayN ](https://github.com/2dust/v2rayN)，其他用了几个都没这个好用。
 
+Linux：Linux的客户端就服务端，只是配置文件需要修改下，还有一个小问题，客户端在安装前，理论上是不能访问外站的，但是使用`bash <(curl -L -s https://install.direct/go.sh)`运行脚本过程中又需要访问外站。先有鸡还是先有蛋:(，所以需要使用go.sh本地安装。
 
+- 访问https://install.direct/go.sh，将go.sh下载到本地
+- 去GitHub上下载v2ray的[releases](https://github.com/v2ray/v2ray-core/releases)安装包，将go.sh和安装包放在同一个目录下
+- 执行本地安装命令`bash go.sh --loacl ./v2ray-linux-64.zip`
+
+记录一下客户端配置
+
+~~~shell
+{
+  "log": {
+    "access": "",
+    "error": "",
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "port": 10808,
+      "listen": "127.0.0.1",
+      "protocol": "socks",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      },
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "ip": null,
+        "clients": null
+      },
+      "streamSettings": null
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vmess",
+      "settings": {
+        "vnext": [
+          {
+            "address": "domain.com",
+            "port": 443,
+            "users": [
+              {
+                "id": "*******-c7b0-4642-bd23-*******",
+                "alterId": 32,
+                "email": "t@t.tt",
+                "security": "auto"
+              }
+            ]
+          }
+        ],
+        "servers": null,
+        "response": null
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "tls",
+        "tlsSettings": {
+          "allowInsecure": true,
+          "serverName": null
+        },
+        "tcpSettings": null,
+        "kcpSettings": null,
+        "wsSettings": {
+          "connectionReuse": true,
+          "path": "/****/**",
+          "headers": null
+        },
+        "httpSettings": null,
+        "quicSettings": null
+      },
+      "mux": {
+        "enabled": true
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "vnext": null,
+        "servers": null,
+        "response": null
+      },
+      "streamSettings": null,
+      "mux": null
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole",
+      "settings": {
+        "vnext": null,
+        "servers": null,
+        "response": {
+          "type": "http"
+        }
+      },
+      "streamSettings": null,
+      "mux": null
+    }
+  ],
+  "dns": null,
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": []
+  }
+}
+~~~
 
 # Nginx
 
 Nginx 和Caddy选择一个就行了，但是使用nginx的话还要配合acme申请证书。可以参考{% post_link acme-install acme.sh申请免费证书 %}
 
-如果配合Cloudflare的话，直接使用Cloudflare的免费证书也行，但是这个就只有Cloudflare中启动 Proxy才有用。
+如果配合Cloudflare的话，直接使用Cloudflare的免费证书也行，但是这个就只有Cloudflare中启动 Proxy才有用，但是没有acme方便，所以不做详细介绍。
 
-之前使用的Nginx，此处只记录下配置。
+## 安装配置
+
+正常安装即可
+
+~~~shell
+apt install nginx -y
+~~~
+
+增加v2ray的nginx配置文件
+
+~~~
+nano /etc/nginx/conf/v2ray.conf
+~~~
+
+这里除了配置了v2ray还匹配了域名，非指定域名返回500错误
 
 ```bash
 upstream v2ray {
