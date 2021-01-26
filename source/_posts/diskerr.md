@@ -1,5 +1,5 @@
 ---
-title: diskerr
+title: 硬盘坏道修复
 tags:
   - debian
   - disk

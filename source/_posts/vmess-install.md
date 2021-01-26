@@ -438,7 +438,8 @@ Linux：Linux的客户端就服务端，只是配置文件需要修改下，还�
 
 # Nginx
 
-Nginx 和Caddy选择一个就行了，但是使用nginx的话还要配合acme申请证书。可以参考{% post_link acme-install acme.sh申请免费证书 %}
+Nginx 和Caddy选择一个就行了，但是使用nginx的话还要配合acme申请证书。可以参考[[acme-install|acme.sh申请免费证书]]
+{% post_link acme-install acme.sh申请免费证书 %}
 
 如果配合Cloudflare的话，直接使用Cloudflare的免费证书也行，但是这个就只有Cloudflare中启动 Proxy才有用，但是没有acme方便，所以不做详细介绍。
 
