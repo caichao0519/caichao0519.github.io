@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>cc&#39;s blog</title>
+  <icon>https://cc2048.com/icon.png</icon>
+  <subtitle>123</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://cc2048.com/"/>
+  <updated>2021-01-26T07:59:28.616Z</updated>
+  <id>https://cc2048.com/</id>
+  
+  <author>
+    <name>cc</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Caddy正向代理</title>
+    <link href="https://cc2048.com/archives/95d3d41d.html"/>
+    <id>https://cc2048.com/archives/95d3d41d.html</id>
+    <published>2021-01-26T15:48:00.000Z</published>
+    <updated>2021-01-26T07:59:28.616Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;之前正向代理一直选择的是squid+acme的方式，但是后来发现squid配置的证书链不生效，也试了其他几个证书都是这个问题，导致有时候手机上面没法使用，所以打算换成caddy，而且使用caddy就不用安装acme了，caddy可以自动申请证书。&lt;/p&gt;
+&lt;h1 id=&quot;安装&quot;&gt;&lt;a href=&quot;#安装&quot; class=&quot;headerlink&quot; title=&quot;安装&quot;&gt;&lt;/a&gt;安装&lt;/h1&gt;&lt;p&gt;caddy1已经被官方放弃了，现在只能使用caddy2，而且v1和v2不兼容。使用caddy最重要的原因还是应为配置简单，出问题的话直接检查caddy就行了。&lt;/p&gt;
+&lt;p&gt;caddy想要使用正向代理功能需要安装http.forwardproxy插件，而该插件是非标插件，官方提供的下载中没有此插件，只能手动编译。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="软件" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/"/>
+    
+    
+      <category term="caddy" scheme="https://cc2048.com/tags/caddy/"/>
+    
+      <category term="forwardproxy" scheme="https://cc2048.com/tags/forwardproxy/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>diskerr</title>
+    <link href="https://cc2048.com/archives/722501a8.html"/>
+    <id>https://cc2048.com/archives/722501a8.html</id>
+    <published>2020-06-26T22:38:32.000Z</published>
+    <updated>2020-12-17T06:38:53.338Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘&lt;code&gt;read failure&lt;/code&gt;了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是&lt;code&gt;badblocks&lt;/code&gt;修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png&quot; alt=&quot;SMART测试结果&quot;&gt;&lt;/p&gt;
+&lt;p&gt;之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="系统" scheme="https://cc2048.com/categories/%E7%B3%BB%E7%BB%9F/"/>
+    
+    
+      <category term="debian" scheme="https://cc2048.com/tags/debian/"/>
+    
+      <category term="disk" scheme="https://cc2048.com/tags/disk/"/>
+    
+      <category term="smart" scheme="https://cc2048.com/tags/smart/"/>
+    
+      <category term="badblocks" scheme="https://cc2048.com/tags/badblocks/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Squid代理服务器搭建</title>
+    <link href="https://cc2048.com/archives/c4788f70.html"/>
+    <id>https://cc2048.com/archives/c4788f70.html</id>
+    <published>2020-05-05T17:36:56.000Z</published>
+    <updated>2020-12-17T03:28:56.231Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;Squid是一个Web缓存代理，支持处理HTTP，FTP，GOPHER，SSL和WAIS等协议，它通过缓存域重用经常请求的Web页面，减少带宽使用的同时提升响应时间。&lt;/p&gt;
+&lt;p&gt;也就是说，如果一个人想下载一web页面，他请求Squid为他取得这个页面。Squid随之连接到远程服务器并向这个页面发出请求。然后，Squid将获取到的页面数据返回到客户端机器，而且同时复制一份。当下一次有人需要同一页面时，Squid可以简单地从磁盘中读到它，那样数据迅即就会传输到客户机上。&lt;/p&gt;
+&lt;p&gt;官站：&lt;a href=&quot;http://www.squid-cache.org/&quot; target=&quot;_blank&quot; rel=&quot;noopener external nofollow noreferrer&quot;&gt;http://www.squid-cache.org/&lt;/a&gt;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="软件" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/"/>
+    
+      <category term="squid" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/squid/"/>
+    
+    
+      <category term="squid" scheme="https://cc2048.com/tags/squid/"/>
+    
+      <category term="proxy" scheme="https://cc2048.com/tags/proxy/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>WebSocket+TLS+Caddy+V2ray+CDN</title>
+    <link href="https://cc2048.com/archives/869e664c.html"/>
+    <id>https://cc2048.com/archives/869e664c.html</id>
+    <published>2020-05-03T00:32:15.000Z</published>
+    <updated>2020-12-17T03:51:20.858Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;之前的VPS要到期了，正好迁移下VPS，顺带整理下资料。&lt;/p&gt;
+&lt;p&gt;实现方式：WebSocket+TLS+Caddy/Nginx+V2ray+CDN&lt;/p&gt;
+&lt;p&gt;系统环境：Debian 10&lt;/p&gt;
+&lt;p&gt;加速：BBR&lt;/p&gt;
+&lt;h1 id=&quot;更新系统&quot;&gt;&lt;a href=&quot;#更新系统&quot; class=&quot;headerlink&quot; title=&quot;更新系统&quot;&gt;&lt;/a&gt;更新系统&lt;/h1&gt;&lt;p&gt;&lt;strong&gt;更新系统源和软件包&lt;/strong&gt;&lt;/p&gt;
+&lt;figure class=&quot;highlight bash&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;apt-get update &amp;amp;&amp;amp; apt-get upgrade&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+    
+    </summary>
+    
+    
+      <category term="VPS" scheme="https://cc2048.com/categories/VPS/"/>
+    
+    
+      <category term="caddy" scheme="https://cc2048.com/tags/caddy/"/>
+    
+      <category term="v2ray" scheme="https://cc2048.com/tags/v2ray/"/>
+    
+      <category term="vps" scheme="https://cc2048.com/tags/vps/"/>
+    
+      <category term="bbr" scheme="https://cc2048.com/tags/bbr/"/>
+    
+      <category term="nginx" scheme="https://cc2048.com/tags/nginx/"/>
+    
+      <category term="cloudflare" scheme="https://cc2048.com/tags/cloudflare/"/>
+    
+      <category term="cdn" scheme="https://cc2048.com/tags/cdn/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>acme.sh申请免费证书</title>
+    <link href="https://cc2048.com/archives/bd4e69fb.html"/>
+    <id>https://cc2048.com/archives/bd4e69fb.html</id>
+    <published>2020-05-03T00:13:16.000Z</published>
+    <updated>2020-12-17T03:29:46.282Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;ACME（自动证书管理环境）是Let’s Encrypt用以实现新的数字证书认证机构的协议，旨在以自动化流程消除手动创建和安装证书的复杂流程，并推广使万维网服务器的加密连接无所不在，为安全网站提供免费的SSL/TLS证书。&lt;/p&gt;
+&lt;p&gt;ACME只是一个协议，任何人都可以利用这个协议实现一个客户端，获取免费的证书，例如Certbot、acme.sh等Caddy中的自动证书也是基于这个协议。&lt;/p&gt;
+&lt;p&gt;官方主推的Certbot客户端，不过acme.sh用的很方便，也就不再去折腾了。&lt;/p&gt;
+&lt;p&gt;Let’s Encrypt官方文档：&lt;a href=&quot;https://letsencrypt.org/zh-cn/docs/&quot; target=&quot;_blank&quot; rel=&quot;noopener external nofollow noreferrer&quot;&gt;https://letsencrypt.org/zh-cn/docs/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;acme.sh中文文档：&lt;a href=&quot;https://github.com/acmesh-official/acme.sh/wiki/说明&quot; target=&quot;_blank&quot; rel=&quot;noopener external nofollow noreferrer&quot;&gt;https://github.com/acmesh-official/acme.sh/wiki/%E8%AF%B4%E6%98%8E&lt;/a&gt;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="域名" scheme="https://cc2048.com/categories/%E5%9F%9F%E5%90%8D/"/>
+    
+    
+      <category term="acme" scheme="https://cc2048.com/tags/acme/"/>
+    
+      <category term="domain" scheme="https://cc2048.com/tags/domain/"/>
+    
+      <category term="Encrypt" scheme="https://cc2048.com/tags/Encrypt/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Git代理配置</title>
+    <link href="https://cc2048.com/archives/aa7e6513.html"/>
+    <id>https://cc2048.com/archives/aa7e6513.html</id>
+    <published>2020-04-29T20:27:53.000Z</published>
+    <updated>2020-12-17T06:38:52.079Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;Git代理设置、查看、取消代理&quot;&gt;&lt;a href=&quot;#Git代理设置、查看、取消代理&quot; class=&quot;headerlink&quot; title=&quot;Git代理设置、查看、取消代理&quot;&gt;&lt;/a&gt;Git代理设置、查看、取消代理&lt;/h1&gt;&lt;p&gt;设置代理：&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git config --global http.proxy &amp;#39;http:&amp;#x2F;&amp;#x2F;127.0.0.1:8080&amp;#39; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;git config --global https.proxy &amp;#39;https:&amp;#x2F;&amp;#x2F;127.0.0.1:8443&amp;#39;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+    
+    </summary>
+    
+    
+      <category term="软件" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/"/>
+    
+      <category term="Git" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/Git/"/>
+    
+    
+      <category term="Git" scheme="https://cc2048.com/tags/Git/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Git本地环境搭建</title>
+    <link href="https://cc2048.com/archives/42009ab4.html"/>
+    <id>https://cc2048.com/archives/42009ab4.html</id>
+    <published>2020-04-29T20:23:18.000Z</published>
+    <updated>2020-12-17T06:38:52.636Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;下载安装Git&quot;&gt;&lt;a href=&quot;#下载安装Git&quot; class=&quot;headerlink&quot; title=&quot;下载安装Git&quot;&gt;&lt;/a&gt;下载安装Git&lt;/h2&gt;&lt;p&gt;&lt;a href=&quot;https://git-scm.com/downloads&quot; target=&quot;_blank&quot; rel=&quot;noopener external nofollow noreferrer&quot;&gt;https://git-scm.com/downloads&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&quot;配置用户名和邮箱&quot;&gt;&lt;a href=&quot;#配置用户名和邮箱&quot; class=&quot;headerlink&quot; title=&quot;配置用户名和邮箱&quot;&gt;&lt;/a&gt;配置用户名和邮箱&lt;/h2&gt;&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git config --global user.name &quot;XXX&quot;&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;git config --global user.email &quot;XXXXXX@gmail.com&quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;注：此用户名和邮箱是 git 提交代码时用来显示你身份和联系方式的，并不是 GitHub 用户名和邮箱。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;查看命令&lt;/strong&gt;&lt;/p&gt;
+&lt;figure class=&quot;highlight shell&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git config user.name&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;git config user.email&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+    
+    </summary>
+    
+    
+      <category term="软件" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/"/>
+    
+      <category term="Git" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/Git/"/>
+    
+    
+      <category term="Git" scheme="https://cc2048.com/tags/Git/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>Hexo命令汇总</title>
+    <link href="https://cc2048.com/archives/8bb4c5fa.html"/>
+    <id>https://cc2048.com/archives/8bb4c5fa.html</id>
+    <published>2020-03-13T11:32:24.000Z</published>
+    <updated>2020-12-17T03:29:11.875Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;hexo的命令并不算多，常用命令更少，基本使用一遍就能记得。在此记录一下，方便查找。&lt;/p&gt;
+&lt;h1 id=&quot;常用命令&quot;&gt;&lt;a href=&quot;#常用命令&quot; class=&quot;headerlink&quot; title=&quot;常用命令&quot;&gt;&lt;/a&gt;常用命令&lt;/h1&gt;&lt;p&gt;新建文章&lt;br&gt;&lt;code&gt;hexo n &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
+&lt;p&gt;新建草稿&lt;br&gt;&lt;code&gt;hexo n draft &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
+&lt;p&gt;移动草稿到正文&lt;br&gt;&lt;code&gt;hexo publish &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
+&lt;p&gt;清除缓存、静态文件并生成网站静态文件&lt;br&gt;&lt;code&gt;hexo clean &amp;amp;&amp;amp; hexo g&lt;/code&gt;&lt;br&gt;&lt;code&gt;hexo g -f&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;生成网站静态文件并部署到git&lt;br&gt;&lt;code&gt;hexo g -d&lt;/code&gt;  &lt;/p&gt;
+&lt;p&gt;生成网站静态文件并再本地启动预览&lt;br&gt;&lt;code&gt;hexo g &amp;amp;&amp;amp; hexo s&lt;/code&gt;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="软件" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/"/>
+    
+      <category term="Hexo" scheme="https://cc2048.com/categories/%E8%BD%AF%E4%BB%B6/Hexo/"/>
+    
+    
+      <category term="hexo" scheme="https://cc2048.com/tags/hexo/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>家庭NAS折腾记-综述</title>
+    <link href="https://cc2048.com/archives/92ef66de.html"/>
+    <id>https://cc2048.com/archives/92ef66de.html</id>
+    <published>2020-03-09T19:27:13.000Z</published>
+    <updated>2020-12-17T03:28:58.606Z</updated>
+    
+    <summary type="html">
+    
+      &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;编写本篇文章的主要是对自己折腾NAS的一个学习的记录和总结，以及在折腾的过程中，发现能搜索到的大部分文章都没有具体的操作过程，像我这种很懒得人就想照着文档做的机会都没有，还得各种花式翻资料。所以在折腾的过程中就蒙生了写一个能照着做的文档，即方总结自己，也希望能帮到别人。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="NAS" scheme="https://cc2048.com/categories/NAS/"/>
+    
+    
+      <category term="NAS" scheme="https://cc2048.com/tags/NAS/"/>
+    
+  </entry>
+  
+</feed>

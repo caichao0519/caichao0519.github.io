@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Caddy正向代理</title>
+    <url>/archives/95d3d41d.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前正向代理一直选择的是squid+acme的方式，但是后来发现squid配置的证书链不生效，也试了其他几个证书都是这个问题，导致有时候手机上面没法使用，所以打算换成caddy，而且使用caddy就不用安装acme了，caddy可以自动申请证书。</p>
+<h1 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h1><p>caddy1已经被官方放弃了，现在只能使用caddy2，而且v1和v2不兼容。使用caddy最重要的原因还是应为配置简单，出问题的话直接检查caddy就行了。</p>
+<p>caddy想要使用正向代理功能需要安装http.forwardproxy插件，而该插件是非标插件，官方提供的下载中没有此插件，只能手动编译。</p>
+<a id="more"></a>
+
+<h2 id="编译caddy"><a href="#编译caddy" class="headerlink" title="编译caddy"></a>编译caddy</h2><p>编译带插件的二进制文件并非必要操作，可以直接使用已经编译好的二进制文件。</p>
+<h3 id="go安装"><a href="#go安装" class="headerlink" title="go安装"></a>go安装</h3><p>下载go安装包并解压</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">wget https://golang.org/dl/go1.15.7.linux-amd64.tar.gz</span><br><span class="line">tar -zxvf go1.15.7.linux-amd64.tar.gz</span><br></pre></td></tr></table></figure>
+
+<p>将解压文件移动到任意目录</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">mkdir -p /opt/devtools</span><br><span class="line">mv go /opt/devtools/go</span><br></pre></td></tr></table></figure>
+
+<p>调整变量配置，将以下变量加入到 shell 初始化配置中</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &gt;&gt;  ~&#x2F;.profile</span><br><span class="line">export PATH&#x3D;$PATH:&#x2F;opt&#x2F;devtools&#x2F;go&#x2F;bin</span><br><span class="line">export PATH&#x3D;$PATH:$HOME&#x2F;.cargo&#x2F;bin</span><br><span class="line">export GOROOT&#x3D;opt&#x2F;devtools&#x2F;go</span><br><span class="line">export GOBIN&#x3D;$GOROOT&#x2F;bin</span><br><span class="line">export PATH&#x3D;$PATH:$GOBIN</span><br></pre></td></tr></table></figure>
+
+<p>运行命令使配置生效，或退出重新登录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">source ~&#x2F;.profile</span><br></pre></td></tr></table></figure>
+
+<h3 id="xcaddy安装"><a href="#xcaddy安装" class="headerlink" title="xcaddy安装"></a>xcaddy安装</h3><p>xcaddy需要从git下载，要先安装git </p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">apt  install -y git</span><br></pre></td></tr></table></figure>
+
+<p>安装xcaddy工具</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">go get -u github.com&#x2F;caddyserver&#x2F;xcaddy&#x2F;cmd&#x2F;xcaddy</span><br></pre></td></tr></table></figure>
+
+<h3 id="编译插件"><a href="#编译插件" class="headerlink" title="编译插件"></a>编译插件</h3><p>在caddy中打入forwardproxy插件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">xcaddy build \</span><br><span class="line">    --with github.com&#x2F;caddyserver&#x2F;forwardproxy@caddy2</span><br></pre></td></tr></table></figure>
+
+<p>完成后会生成caddy的二进制文件，可使用以下命令验证插件是否安装成功</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.&#x2F;caddy list-modules</span><br></pre></td></tr></table></figure>
+
+<h2 id="安装caddy"><a href="#安装caddy" class="headerlink" title="安装caddy"></a>安装caddy</h2><p>官方安装<a href="https://caddyserver.com/docs/install#debian-ubuntu-raspbian" target="_blank" rel="noopener external nofollow noreferrer">文档</a></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt install -y debian-keyring debian-archive-keyring apt-transport-https</span><br><span class="line">curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/gpg/gpg.155B6D79CA56EA34.key' | sudo apt-key add -</span><br><span class="line">curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/cfg/setup/config.deb.txt?distro=debian&amp;version=any-version' | sudo tee -a /etc/apt/sources.list.d/caddy-stable.list</span><br><span class="line">sudo apt update</span><br><span class="line">sudo apt install caddy</span><br></pre></td></tr></table></figure>
+
+<p>替换二进制文件</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">rm -f /usr/bin/caddy</span><br><span class="line">mv ./caddy /usr/bin/caddy</span><br></pre></td></tr></table></figure>
+
+<h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>v2可以直接写json作为配置，但还是Caddyfile的配置特别简单，所以还是用Caddyfile，配置文件在/etc/caddy/Caddyfile。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cat &gt; /etc/caddy/Caddyfile</span><br><span class="line">:443, xxx.domain.com</span><br><span class="line">route &#123;</span><br><span class="line">  forward_proxy &#123;</span><br><span class="line">    basic_auth user pass</span><br><span class="line">    ports     443</span><br><span class="line">    hide_ip</span><br><span class="line">    hide_via</span><br><span class="line">    probe_resistance</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以通过命令将Caddyfile转成json文件,<code>caddy adapt /ect/caddy/Caddyfile</code></p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"apps"</span>:&#123;</span><br><span class="line">        <span class="attr">"http"</span>:&#123;</span><br><span class="line">            <span class="attr">"servers"</span>:&#123;</span><br><span class="line">                <span class="attr">"srv0"</span>:&#123;</span><br><span class="line">                    <span class="attr">"listen"</span>:[</span><br><span class="line">                        <span class="string">":443"</span></span><br><span class="line">                    ],</span><br><span class="line">                    <span class="attr">"routes"</span>:[</span><br><span class="line">                        &#123;</span><br><span class="line">                            <span class="attr">"handle"</span>:[</span><br><span class="line">                                &#123;</span><br><span class="line">                                    <span class="attr">"handler"</span>:<span class="string">"subroute"</span>,</span><br><span class="line">                                    <span class="attr">"routes"</span>:[</span><br><span class="line">                                        &#123;</span><br><span class="line">                                            <span class="attr">"handle"</span>:[</span><br><span class="line">                                                &#123;</span><br><span class="line">                                                    <span class="attr">"allowed_ports"</span>:[</span><br><span class="line">                                                        <span class="number">443</span></span><br><span class="line">                                                    ],</span><br><span class="line">                                                    <span class="attr">"auth_pass_deprecated"</span>:<span class="string">"pass"</span>,</span><br><span class="line">                                                    <span class="attr">"auth_user_deprecated"</span>:<span class="string">"user"</span>,</span><br><span class="line">                                                    <span class="attr">"handler"</span>:<span class="string">"forward_proxy"</span>,</span><br><span class="line">                                                    <span class="attr">"hide_ip"</span>:<span class="literal">true</span>,</span><br><span class="line">                                                    <span class="attr">"hide_via"</span>:<span class="literal">true</span>,</span><br><span class="line">                                                    <span class="attr">"probe_resistance"</span>:&#123;</span><br><span class="line"></span><br><span class="line">                                                    &#125;</span><br><span class="line">                                                &#125;</span><br><span class="line">                                            ]</span><br><span class="line">                                        &#125;</span><br><span class="line">                                    ]</span><br><span class="line">                                &#125;</span><br><span class="line">                            ]</span><br><span class="line">                        &#125;</span><br><span class="line">                    ]</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="attr">"tls"</span>:&#123;</span><br><span class="line">            <span class="attr">"certificates"</span>:&#123;</span><br><span class="line">                <span class="attr">"automate"</span>:[</span><br><span class="line">                    <span class="string">"xxx.domain.com"</span></span><br><span class="line">                ]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>最终发现这个不适合我现在的场景，forwordproxy的插件只支持<code>:443, xxx.domain.com</code>这种格式进行匹配，用多域的语法就没法代理，而且只支持443端口，后来想了下，或许直接用json可以？但是不想试了，这个暂时弃用了， 后面考虑考虑用Nginx试试。</p>
+]]></content>
+      <categories>
+        <category>软件</category>
+      </categories>
+      <tags>
+        <tag>caddy</tag>
+        <tag>forwardproxy</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>diskerr</title>
+    <url>/archives/722501a8.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘<code>read failure</code>了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是<code>badblocks</code>修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png" alt="SMART测试结果"></p>
+<p>之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。</p>
+<a id="more"></a>
+
+<h1 id="硬盘坏道"><a href="#硬盘坏道" class="headerlink" title="硬盘坏道"></a>硬盘坏道</h1><p>硬盘坏道就是机械硬盘在使用过程中产生的各种各样问题中最严重的一种，硬盘坏道出现，基本就代表硬盘寿命的终结，只能想办法拖延报废时间，无法解决坏道的问题。硬盘坏道主要是因为硬盘本身的质量以及老化，其次就是平时在使用上没有好好爱护，比如内存太少以致应用软件对硬盘频繁访问、对硬盘过分频繁地整理碎片、不适当的超频、电源质量不好、温度过高、防尘不良、震动等，诸类问题都可能引起硬盘坏道。</p>
+<h2 id="主要原因"><a href="#主要原因" class="headerlink" title="主要原因"></a>主要原因</h2><p><strong>1、非法关机</strong><br>硬盘在工作时是不能突然断电和非法关机的，这点大家要切记，这也是使硬盘最容易产生坏道的重要原因之一。原因很简单：当硬盘在工作中是，盘片处于高速运转状态，磁头停留在盘片的不同位置读取磁盘中存放的数据。如果中途突然断电，磁头便会迅速做归位动作，则可能导致磁头与盘片猛烈磨擦而损坏硬盘盘片。因此在工作中，千万要避免突然断电导致非法关机，另外其它的非法关机操作也要尽量的避免。再者windwos自带重新启动功能也尽量少用，因为这一功能会使硬盘在瞬间突然断电加电，也极容易引起硬盘的各种故障，如果需要重新启动，则正确的方法是在电脑关闭10秒钟以后再按开机按钮打开电脑。</p>
+<p><strong>2、静电</strong><br>静电对电脑硬盘的损害大家也许再熟悉不过了，对于硬盘而言，其背部的电路版同样会受到静电的伤害。因些，不能用手随便地触摸硬盘背面的电路板。这是因为在气候干燥时，人体通常带有静电，在这种情况下用手触摸硬盘背面的电路板，则人体静电就可能伤害到硬盘上的电子元器件，导致硬盘无法正常运行。</p>
+<p>在用手拿硬盘时应该抓住硬盘两侧，并避免与其背面的电路板直接接触。有些类型的硬盘会在其外部包上一层护膜，它除具备防震功能外，更把电路板保护其中，这样我们就可以不用担心什么静电了。</p>
+<p><strong>3、高温</strong><br>温度对硬盘的寿命也是有很大影响的。硬盘工作时会产生一定热量，使用中存在散热问题。温度以20～25℃为宜，过高或过低都会使晶体振荡器的时钟主频发生改变。温度还会造成硬盘电路元器件失灵，磁介质也会因热胀效应而造成记录错误。温度过低，空气中的水分会被凝结在集成电路元器件上，造成短路。</p>
+<p>湿度过高时，电子元器件表面可能会吸附一层水膜，氧化、腐蚀电子线路，以致接触不良，甚至短路，还会使磁介质的磁力发生变化，造成数据的读写错误；湿度过低，容易积累大量的因机器转动而产生的静电荷，从而烧坏CMOS电路，吸附灰尘而损坏磁头、划伤磁盘片。机房内的湿度以45～65%为宜。注意使空气保持干燥或经常给系统加电，靠自身发热将机内水汽蒸发掉。另外，尽量不要使硬盘靠近强磁场，如音箱、喇叭、电机、电台、手机等，以免硬盘所记录的数据因磁化而损坏。</p>
+<p><strong>4、震动</strong><br>硬盘的制造过程十分的复杂，工艺十分精密，虽然各大硬盘厂商都在硬盘中加入了防震抗摔功能，但碰撞和震动依然是困绕硬盘的几大杀手之一。过度的碰撞和长期工作在震动的环境下极易造成硬盘盘片与磁头结合不严密，磁头断裂的现象，特别是在硬盘工作中，后果将会更加的严重。因此，一定要将硬盘紧密的固定的机箱内部，上紧每一颗螺丝。另外工作过程不要直接移动硬盘和移动机箱，需要将电脑移动位置时切记要轻拿轻放，防止硬盘碰撞造成损坏。</p>
+<p><strong>5、灰尘</strong><br>灰尘对硬盘的损害是非常大的，可以说灰尘是硬盘的头号杀手。大家知道硬盘的磁头与盘片接触是十分紧密的，不允许有半点的灰尘，如果灰尘落入硬盘盘片上后，那么就意识着硬盘离损坏为期不晚。</p>
+<p>另外，如果在灰尘严重的环境下长期工作，硬盘很容易吸引空气中的灰尘颗粒，使其长期积累在硬盘的内部电路元器件上，会影响电子元器件的热量散发，使得电路元器件的温度上升，产生漏电或烧坏元件。灰尘也可能吸收水分，腐蚀硬盘内部的电子线路，造成一些莫名其妙的问题，所以灰尘体积虽小，但对硬盘的危害是绝对不可低估。因此必须保持环境卫生，减少空气中的潮湿度和含尘量。</p>
+<h2 id="坏道类型"><a href="#坏道类型" class="headerlink" title="坏道类型"></a>坏道类型</h2><p>硬盘的坏道分两种类型：逻辑坏道和物理坏道。</p>
+<p>物理坏道：顾名思义就是硬盘实体有损坏的地方，只要有1个坏道，很快硬盘就会产生更多坏道而报废，隔离坏道也只能拖延硬盘报废的时间，即使拖延也可能拖不久，和硬盘中的重要数据相比，还是赶紧换了的好。</p>
+<p>逻辑坏道：是磁盘磁道上面的校验信息（ECC）跟磁道的数据对不上号所致。出现这一故障的原因，通常都是因为一些程序的错误操作或是该处扇区的磁介质开始出现不稳定的先兆。物理坏道也是逻辑坏道产生的一种原因，一般可用软件修复。</p>
+<h1 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h1><h2 id="检索坏道"><a href="#检索坏道" class="headerlink" title="检索坏道"></a>检索坏道</h2><p>使用<code>badblocks</code>命令检查硬盘坏道：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">badblocks -s -v -o /root/sdd.log /dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>以上是检查整块sdd硬盘，并将坏块结果输出到/root/sdd.log中。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &#x2F;root&#x2F;sdd.log</span><br><span class="line">3630171136</span><br><span class="line">3630171137</span><br><span class="line">3630171138</span><br><span class="line">3630171139</span><br></pre></td></tr></table></figure>
+
+<h2 id="备份数据"><a href="#备份数据" class="headerlink" title="备份数据"></a>备份数据</h2><p>有重要数据就备份，也可以不备份</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dd if=/dev/sdd  skip=3630171136 of=/tmp/3630171136-3630171139.dat count=4</span><br></pre></td></tr></table></figure>
+
+<p>if：需要备份的硬盘</p>
+<p>skip：对原文件（if后的部分）跳过多少块再开始备份</p>
+<p>of：文件备份目标</p>
+<p>count：备份多少块</p>
+<h2 id="卸载硬盘"><a href="#卸载硬盘" class="headerlink" title="卸载硬盘"></a>卸载硬盘</h2><p>在使用的硬盘是无法修复的，必须要先<code>umont</code>硬盘后才能开始修复</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">umount /dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>如果提示”Device busy”是因为有程序在使用这个分区，需要将这些进程都关闭。需要使用命令查看哪些进程使用了该目录。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">fuser -m /home</span><br><span class="line">fuser -m -v -i -k /home</span><br></pre></td></tr></table></figure>
+
+<p>第一条fuser命令列出使用/home的进程ID，第二条列出PID并kill掉进程（带有提示确认），建议先使用第一条命令列出PID，然后针对查看是哪些类型的进程，不要盲目杀死进程。</p>
+<h2 id="修复硬盘"><a href="#修复硬盘" class="headerlink" title="修复硬盘"></a>修复硬盘</h2><p>umount 分区成功后，修复命令如下，其中-s表示给出进度，-w表示写入修复的，后面是结束（END）和开始（START）块号，注意END在前，START在后。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">badblocks -s -w /dev/sdd 3630171139 3630171136</span><br></pre></td></tr></table></figure>
+
+<p>修复完成后重新检查坏块区</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">badblocks -s -v /dev/sdd 3630171139 3630171136</span><br></pre></td></tr></table></figure>
+
+<h2 id="恢复数据"><a href="#恢复数据" class="headerlink" title="恢复数据"></a>恢复数据</h2><p>之前做数据备份的现在可以恢复数据了</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dd if=/tmp/217874591-217874595.dat of=/dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>最后将硬盘mount 回去</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">mount /dev/sdd /home</span><br></pre></td></tr></table></figure>
+
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><p><a href="https://blog.csdn.net/LANGZI7758521/java/article/details/52318201" target="_blank" rel="noopener external nofollow noreferrer">硬盘坏道一般原因</a></p>
+<p><a href="https://www.jianshu.com/p/0b7c7e9a8779" target="_blank" rel="noopener external nofollow noreferrer">Linux服务器磁盘坏道的修复过程</a></p>
+]]></content>
+      <categories>
+        <category>系统</category>
+      </categories>
+      <tags>
+        <tag>debian</tag>
+        <tag>disk</tag>
+        <tag>smart</tag>
+        <tag>badblocks</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Squid代理服务器搭建</title>
+    <url>/archives/c4788f70.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Squid是一个Web缓存代理，支持处理HTTP，FTP，GOPHER，SSL和WAIS等协议，它通过缓存域重用经常请求的Web页面，减少带宽使用的同时提升响应时间。</p>
+<p>也就是说，如果一个人想下载一web页面，他请求Squid为他取得这个页面。Squid随之连接到远程服务器并向这个页面发出请求。然后，Squid将获取到的页面数据返回到客户端机器，而且同时复制一份。当下一次有人需要同一页面时，Squid可以简单地从磁盘中读到它，那样数据迅即就会传输到客户机上。</p>
+<p>官站：<a href="http://www.squid-cache.org/" target="_blank" rel="noopener external nofollow noreferrer">http://www.squid-cache.org/</a></p>
+<a id="more"></a>
+
+<h1 id="主要功能"><a href="#主要功能" class="headerlink" title="主要功能"></a>主要功能</h1><ul>
+<li><p>缓存网站内容，以达到分担源站压力加快访问速度的目的。</p>
+<ul>
+<li>热点缓存，只缓存访问热度到达设定级别的网站内容。</li>
+<li>合并回源，多个相同的请求只回源一次。</li>
+</ul>
+</li>
+<li><p>ACL访问控制，可针对源IP、目的地IP、域名、URL、访问时间、单一最大连接数限制访问行为。或通过外部程序验证访问者（proxy_auth）。</p>
+</li>
+<li><p>主要支持协议：HTTP、HTTPS、FTP</p>
+</li>
+<li><p>网页内容篡改，可根据需求篡改网站内容。</p>
+</li>
+<li><p>网站头部篡改，可根据需求篡改请求头部。</p>
+</li>
+<li><p>可针对不同的域名或url配置不同的缓存规则。</p>
+</li>
+</ul>
+<h1 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h1><ul>
+<li>正向代理（本地网关）<ul>
+<li>正向代理的典型用途是为在防火墙内的局域网客户端提供访问Internet的途径。</li>
+<li>正向代理还可以使用缓存特性减少网络使用率。</li>
+<li>正向代理允许客户端通过它访问任意网站并且隐藏客户端自身，因此你必须采取安全措施以确保仅为经过授权的客户端提供服务。</li>
+</ul>
+</li>
+<li>透明代理（cdn，架设于网络运营商主干机房）<ul>
+<li>提高各个地区访问者的访问速度。</li>
+<li>减少源站压力。</li>
+<li>减少网络运营商的网间结算费用。</li>
+<li>节省网络运营商带宽资源。</li>
+</ul>
+</li>
+<li>反向代理（网站前端）<ul>
+<li>降低源站服务器的负载。</li>
+<li>隐藏源站真实ip。</li>
+</ul>
+</li>
+</ul>
+<h1 id="更新系统"><a href="#更新系统" class="headerlink" title="更新系统"></a>更新系统</h1><p><strong>更新系统源和软件包</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get update &amp;&amp; apt-get upgrade</span><br></pre></td></tr></table></figure>
+
+<h1 id="安装服务"><a href="#安装服务" class="headerlink" title="安装服务"></a>安装服务</h1><p>Debian安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt install squid -y</span><br></pre></td></tr></table></figure>
+
+<p>Centos安装</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">yum install squid -y</span><br></pre></td></tr></table></figure>
+
+<h1 id="服务配置"><a href="#服务配置" class="headerlink" title="服务配置"></a>服务配置</h1><p>安装完成后需要修改配置文件，文件默认路径：<code>/etc/squid/squid.conf</code>，查看原始配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">grep -v <span class="string">"^#"</span> /etc/squid/squid.conf |grep -v <span class="string">"^$"</span></span><br></pre></td></tr></table></figure>
+
+<p>可以将原文件备份，去掉注释和空行后输出到配置文件中</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mv /etc/squid/squid.conf /etc/squid/squid.conf.bak</span><br><span class="line">grep -v <span class="string">"^#"</span> /etc/squid/squid.conf.bak |grep -v <span class="string">"^$"</span> &gt;  /etc/squid/squid.conf</span><br></pre></td></tr></table></figure>
+
+<h2 id="端口及https协议"><a href="#端口及https协议" class="headerlink" title="端口及https协议"></a>端口及https协议</h2><p>注释http端口，配置https，直接使用http也行，证书自动注册可以参考<a href="/archives/bd4e69fb.html" title="acme.sh申请免费证书">acme.sh申请免费证书</a>，本人是复用了caddy申请的证书。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># http_port 3128</span></span><br><span class="line">https_port 8443 tls-cert=/path/to/ssl/domain.com.cert tls-key=/path/to/domain.com.key</span><br></pre></td></tr></table></figure>
+
+<p>吐槽：squid3.x和squid4.x配置有个微小的修改，3.x中直接配置<code>cert=xxx.crt key=xxx.key</code>，squid4就变成<code>tls-cert=xxx.tls-crt key=xxx.key</code>了，怎么都喜欢不向下兼容呢。</p>
+<h2 id="用户认证配置"><a href="#用户认证配置" class="headerlink" title="用户认证配置"></a>用户认证配置</h2><p>生成密码文件，htpasswd在apache里面，也可以不安装，用工具在线生成，将结果写入文件就行。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get install apache2-utils</span><br><span class="line">htpasswd /etc/squid/squid_passwd username</span><br></pre></td></tr></table></figure>
+
+<p><code>username</code>替换成想要的用户名，如果要多个用户则运行多次该命令。</p>
+<p>修改<code>/etc/squid/squid.conf</code>，在<code>http_access deny all</code>之前添加用户认证配置。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">auth_param basic program &#x2F;usr&#x2F;lib64&#x2F;squid&#x2F;basic_ncsa_auth &#x2F;etc&#x2F;squid&#x2F;squid_passwd</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Squid proxy-caching web server</span><br><span class="line">auth_param basic credentialsttl 30 minutes</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line">acl ncsa_users proxy_auth REQUIRED</span><br><span class="line">http_access allow ncsa_users</span><br></pre></td></tr></table></figure>
+
+<p><code>auth_param basic program</code>：指定密码文件和用来验证密码的程序，验证程序<code>basic_ncsa_auth</code>的路径在不同32和64位系统中路径是不同的，可以使用命令来检测</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># Debian</span><br><span class="line">dpkg -L squid | grep ncsa_auth</span><br><span class="line"># Centos</span><br><span class="line">rpm -ql squid | grep ncsa_auth</span><br></pre></td></tr></table></figure>
+
+<p><code>auth_param basic children</code> ：鉴权进程的数量，即最多同时在线用户数</p>
+<p><code>auth_param basic realm</code>：输入用户名和密码时用户看到的提示信息</p>
+<p><code>auth_param basic credentialsttl</code>：用户名的缓存时间，即同一个用户多久会调用一次<code>basic_ncsa_auth</code></p>
+<p><code>auth_param basic casesensitive</code>：用户名是否匹配大小写</p>
+<p><code>acl ncsa_users proxy_auth REQUIRED</code>：定义一条名为ncsa_users的用户组，所有鉴权成功的用户都归入ncsa_users组</p>
+<p><code>http_access allow ncsa_users</code>：允许ncsa_users用户组使用代理</p>
+<h2 id="用户行为限制"><a href="#用户行为限制" class="headerlink" title="用户行为限制"></a>用户行为限制</h2><p>限制用户最高下载10m的文件，且<code>mp3、exe、zip、rar、apk、mp4、msi</code>等文件不能下载。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">reply_body_max_size 10 MB</span><br><span class="line">acl download urlpath_regex –i \.mp3$\.exe$\.zip$\.rar$\.apk$\.mp4$\.msi$</span><br><span class="line">http_access deny download</span><br></pre></td></tr></table></figure>
+
+<p>禁止多线程流量</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">acl rangeget req_header Range .*</span><br><span class="line">http_access deny rangeget</span><br></pre></td></tr></table></figure>
+
+<p>隐藏客户端IP</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">request_header_access Via deny all</span><br><span class="line">request_header_access X-Forwarded-For deny all</span><br><span class="line">request_header_access From deny all</span><br></pre></td></tr></table></figure>
+
+<p>测试是否隐藏客户端IP（不显示客户端IP即成功)<a href="http://httpbin.org/ip" target="_blank" rel="noopener external nofollow noreferrer">测试地址</a></p>
+<h1 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#重启服务</span><br><span class="line">systemctl restart squid</span><br><span class="line">#开机自启</span><br><span class="line">systemctl enable squid</span><br></pre></td></tr></table></figure>
+
+<p>在使用过程中，发现运行时间一长squid需要重启才能正常运行，也懒得去找原因，就配置了每日重启</p>
+<p>运行命令</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">crontal -e</span><br></pre></td></tr></table></figure>
+
+<p>写入计划任务</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">0 0 * * * &#x2F;usr&#x2F;bin&#x2F;systemctl restart squid</span><br></pre></td></tr></table></figure>
+
+<p>重启cron</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">systemctl restart cron</span><br></pre></td></tr></table></figure>
+
+<h1 id="参考配置"><a href="#参考配置" class="headerlink" title="参考配置"></a>参考配置</h1><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Recommended minimum configuration:</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Example rule allowing access from your local networks.</span></span><br><span class="line"><span class="comment"># Adapt to list your (internal) IP networks from where browsing</span></span><br><span class="line"><span class="comment"># should be allowed</span></span><br><span class="line">acl localnet src 10.0.0.0/8     <span class="comment"># RFC1918 possible internal network</span></span><br><span class="line">acl localnet src 172.16.0.0/12  <span class="comment"># RFC1918 possible internal network</span></span><br><span class="line">acl localnet src 192.168.0.0/16 <span class="comment"># RFC1918 possible internal network</span></span><br><span class="line">acl localnet src fc00::/7       <span class="comment"># RFC 4193 local private network range</span></span><br><span class="line">acl localnet src fe80::/10      <span class="comment"># RFC 4291 link-local (directly plugged) machines</span></span><br><span class="line"></span><br><span class="line">acl SSL_ports port 443</span><br><span class="line">acl Safe_ports port 80          <span class="comment"># http</span></span><br><span class="line">acl Safe_ports port 21          <span class="comment"># ftp</span></span><br><span class="line">acl Safe_ports port 443         <span class="comment"># https</span></span><br><span class="line">acl Safe_ports port 70          <span class="comment"># gopher</span></span><br><span class="line">acl Safe_ports port 210         <span class="comment"># wais</span></span><br><span class="line">acl Safe_ports port 1025-65535  <span class="comment"># unregistered ports</span></span><br><span class="line">acl Safe_ports port 280         <span class="comment"># http-mgmt</span></span><br><span class="line">acl Safe_ports port 488         <span class="comment"># gss-http</span></span><br><span class="line">acl Safe_ports port 591         <span class="comment"># filemaker</span></span><br><span class="line">acl Safe_ports port 777         <span class="comment"># multiling http</span></span><br><span class="line">acl CONNECT method CONNECT</span><br><span class="line">acl download urlpath_regex –i \.mp3$\.exe$\.zip$\.rar$\.apk$\.mp4$\.msi$</span><br><span class="line">acl rangeget req_header Range .*</span><br><span class="line">reply_body_max_size 10 MB</span><br><span class="line">http_access deny rangeget</span><br><span class="line">http_access deny download</span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Recommended minimum Access Permission configuration:</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Deny requests to certain unsafe ports</span></span><br><span class="line">http_access deny !Safe_ports</span><br><span class="line"></span><br><span class="line"><span class="comment"># Deny CONNECT to other than secure SSL ports</span></span><br><span class="line">http_access deny CONNECT !SSL_ports</span><br><span class="line"></span><br><span class="line"><span class="comment"># Only allow cachemgr access from localhost</span></span><br><span class="line">http_access allow localhost manager</span><br><span class="line">http_access deny manager</span><br><span class="line"></span><br><span class="line"><span class="comment"># We strongly recommend the following be uncommented to protect innocent</span></span><br><span class="line"><span class="comment"># web applications running on the proxy server who think the only</span></span><br><span class="line"><span class="comment"># one who can access services on "localhost" is a local user</span></span><br><span class="line"><span class="comment">#http_access deny to_localhost</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"></span><br><span class="line">auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/squid_passwd</span><br><span class="line">auth_param basic children 5</span><br><span class="line">auth_param basic realm Squid proxy-caching web server</span><br><span class="line">auth_param basic credentialsttl 30 minutes</span><br><span class="line">auth_param basic casesensitive on</span><br><span class="line">acl ncsa_users proxy_auth REQUIRED</span><br><span class="line">http_access allow ncsa_users</span><br><span class="line"><span class="comment">#http_access deny ncsa_users</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Example rule allowing access from your local networks.</span></span><br><span class="line"><span class="comment"># Adapt localnet in the ACL section to list your (internal) IP networks</span></span><br><span class="line"><span class="comment"># from where browsing should be allowed</span></span><br><span class="line">http_access allow localnet</span><br><span class="line">http_access allow localhost</span><br><span class="line"></span><br><span class="line"><span class="comment"># And finally deny all other access to this proxy</span></span><br><span class="line">http_access deny all</span><br><span class="line"><span class="comment">#http_access allow all</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Squid normally listens to port 3128</span></span><br><span class="line">https_port 8443 tls-cert=/path/to/ssl/domain.com.cert tls-key=/path/to/domain.com.key</span><br><span class="line"></span><br><span class="line"><span class="comment"># Uncomment and adjust the following to add a disk cache directory.</span></span><br><span class="line"><span class="comment">#cache_dir ufs /var/spool/squid 100 16 256</span></span><br><span class="line"><span class="comment">#cache_dir ufs /var/spool/squid 1024 16 256</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Leave coredumps in the first cache dir</span></span><br><span class="line">coredump_dir /var/spool/squid</span><br><span class="line"></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Add any of your own refresh_pattern entries above these.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">refresh_pattern ^ftp:           1440    20%     10080</span><br><span class="line">refresh_pattern ^gopher:        1440    0%      1440</span><br><span class="line">refresh_pattern -i (/cgi-bin/|\?) 0     0%      0</span><br><span class="line">refresh_pattern .               0       20%     4320</span><br><span class="line"><span class="comment"># </span></span><br><span class="line">request_header_access Via deny all</span><br><span class="line">request_header_access X-Forwarded-For deny all</span><br><span class="line">request_header_access From deny all</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p><a href="https://jishuin.proginn.com/p/6430.html" target="_blank" rel="noopener external nofollow noreferrer">万字长文带你了解最常用的开源 Squid 代理服务器</a></p>
+]]></content>
+      <categories>
+        <category>软件</category>
+        <category>squid</category>
+      </categories>
+      <tags>
+        <tag>squid</tag>
+        <tag>proxy</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>WebSocket+TLS+Caddy+V2ray+CDN</title>
+    <url>/archives/869e664c.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前的VPS要到期了，正好迁移下VPS，顺带整理下资料。</p>
+<p>实现方式：WebSocket+TLS+Caddy/Nginx+V2ray+CDN</p>
+<p>系统环境：Debian 10</p>
+<p>加速：BBR</p>
+<h1 id="更新系统"><a href="#更新系统" class="headerlink" title="更新系统"></a>更新系统</h1><p><strong>更新系统源和软件包</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">apt-get update &amp;&amp; apt-get upgrade</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h1 id="V2ray"><a href="#V2ray" class="headerlink" title="V2ray"></a>V2ray</h1><p>官站：<a href="https://www.v2ray.com/" target="_blank" rel="noopener external nofollow noreferrer">https://www.v2ray.com/</a></p>
+<p>白话文教程：<a href="https://toutyrater.github.io/" target="_blank" rel="noopener external nofollow noreferrer">https://toutyrater.github.io/</a></p>
+<h2 id="脚本安装"><a href="#脚本安装" class="headerlink" title="脚本安装"></a>脚本安装</h2><p><strong>下载安装</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">bash &lt;(curl -L -s https://install.direct/go.sh)</span><br></pre></td></tr></table></figure>
+
+<p><strong>位置查看</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">whereis v2ray</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="编辑配置"><a href="#编辑配置" class="headerlink" title="编辑配置"></a>编辑配置</h2><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">nano /etc/v2ray/config.json</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>&quot;port&quot;: 10086</code> 换成自己的端口，未被占用就行</li>
+<li>ID需要换成自己的可以使用生成器：<a href="https://www.uuidgenerator.net/version1" target="_blank" rel="noopener external nofollow noreferrer">UUID生成器</a></li>
+<li><code>&quot;path&quot;: &quot;/blog/CC&quot;</code>换成自己的路径，随便填写，与caddy配置匹配就行</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        "log": &#123;</span><br><span class="line">                "access": "/var/log/v2ray/access.log",</span><br><span class="line">                "error": "/var/log/v2ray/error.log",</span><br><span class="line">                "loglevel": "warning"</span><br><span class="line">        &#125;,</span><br><span class="line">        "inbound": &#123;</span><br><span class="line">                "port": 10086,</span><br><span class="line">                "listen": "127.0.0.1",</span><br><span class="line">                "protocol": "vmess",</span><br><span class="line">                "allocate": &#123;</span><br><span class="line">                        "strategy": "always"</span><br><span class="line">                &#125;,</span><br><span class="line">                "settings": &#123;</span><br><span class="line">                        "clients": [&#123;</span><br><span class="line">                                "id": "********-c7b0-4642-bd23-********",</span><br><span class="line">                                "level": 0,</span><br><span class="line">                                "alterId": 32</span><br><span class="line">                        &#125;]</span><br><span class="line">                &#125;,</span><br><span class="line">                "streamSettings": &#123;</span><br><span class="line">                        "network": "ws",</span><br><span class="line">                        "security": "auto",</span><br><span class="line">                        "wsSettings": &#123;</span><br><span class="line">                                "path": "/****/***"</span><br><span class="line">                        &#125;</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        "outbound": &#123;</span><br><span class="line">                "protocol": "freedom",</span><br><span class="line">                "settings": &#123;&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        "outboundDetour": [&#123;</span><br><span class="line">                "protocol": "blackhole",</span><br><span class="line">                "settings": &#123;&#125;,</span><br><span class="line">                "tag": "blocked"</span><br><span class="line">        &#125;],</span><br><span class="line">        "routing": &#123;</span><br><span class="line">                "strategy": "rules",</span><br><span class="line">                "settings": &#123;</span><br><span class="line">                        "rules": [&#123;</span><br><span class="line">                                "type": "field",</span><br><span class="line">                                "ip": [</span><br><span class="line">                                        "0.0.0.0/8",</span><br><span class="line">                                        "10.0.0.0/8",</span><br><span class="line">                                        "100.64.0.0/10",</span><br><span class="line">                                        "127.0.0.0/8",</span><br><span class="line">                                        "169.254.0.0/16",</span><br><span class="line">                                        "172.16.0.0/12",</span><br><span class="line">                                        "192.0.0.0/24",</span><br><span class="line">                                        "192.0.2.0/24",</span><br><span class="line">                                        "192.168.0.0/16",</span><br><span class="line">                                        "198.18.0.0/15",</span><br><span class="line">                                        "198.51.100.0/24",</span><br><span class="line">                                        "203.0.113.0/24",</span><br><span class="line">                                        "::1/128",</span><br><span class="line">                                        "fc00::/7",</span><br><span class="line">                                        "fe80::/10"</span><br><span class="line">                                ],</span><br><span class="line">                                "outboundTag": "blocked"</span><br><span class="line">                        &#125;]</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证配置</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">/usr/bin/v2ray/v2ray -<span class="built_in">test</span> -config=/etc/v2ray/config.json</span><br></pre></td></tr></table></figure>
+
+<p>返回<code>Configuration OK.</code>就算成功。</p>
+<h2 id="启动程序"><a href="#启动程序" class="headerlink" title="启动程序"></a>启动程序</h2><p><strong>开机自启</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl enbale v2ray</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动服务</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl start v2ray</span><br></pre></td></tr></table></figure>
+
+<p><strong>查看运行状态</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl status v2ray</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="Caddy"><a href="#Caddy" class="headerlink" title="Caddy"></a>Caddy</h1><p>官站：<a href="https://caddyserver.com/" target="_blank" rel="noopener external nofollow noreferrer">https://caddyserver.com/</a></p>
+<p>文档：<a href="https://caddyserver.com/docs/" target="_blank" rel="noopener external nofollow noreferrer">https://caddyserver.com/docs/</a></p>
+<p>最坑的是Caddy升级了，V2版本不向下兼容，Caddyfile V1的配置不兼容了。只能按照官方文档调整。</p>
+<h2 id="软件安装"><a href="#软件安装" class="headerlink" title="软件安装"></a>软件安装</h2><p><strong>使用源安装</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">"deb [trusted=yes] https://apt.fury.io/caddy/ /"</span> \</span><br><span class="line">    | tee -a /etc/apt/sources.list.d/caddy-fury.list</span><br><span class="line">apt update</span><br><span class="line">apt install caddy</span><br></pre></td></tr></table></figure>
+
+<h2 id="编辑配置-1"><a href="#编辑配置-1" class="headerlink" title="编辑配置"></a>编辑配置</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">nano &#x2F;etc&#x2F;caddy&#x2F;Caddyfile</span><br></pre></td></tr></table></figure>
+
+<p>Caddy的配置非常简单，且可以自动申请证书，这也是换用Caddy的原因。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">domain.com</span><br><span class="line">&#123;</span><br><span class="line">  tls 123456@gmail.com</span><br><span class="line">  log /var/log/caddy.log</span><br><span class="line">  root * /var/www/html</span><br><span class="line">  reverse_proxy /blog/CC localhost:10086 &#123;</span><br><span class="line">    header_up -Origin</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动程序-1"><a href="#启动程序-1" class="headerlink" title="启动程序"></a>启动程序</h2><p><strong>开机自启</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl enbale caddy</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动服务</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl start caddy</span><br></pre></td></tr></table></figure>
+
+<p><strong>查看运行状态</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">systemctl status caddy</span><br></pre></td></tr></table></figure>
+
+<h1 id="BBR加速"><a href="#BBR加速" class="headerlink" title="BBR加速"></a>BBR加速</h1><p>BBR有好几个版本，原版、魔改版、BBR Plus版，原版的加速效果是最差的，不过，最后决定安装原版。</p>
+<p><strong>查看内核版本</strong></p>
+<p>开起BBR需要内核4.9以上</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
+
+<p><strong>添加变量</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">echo "net.core.default_qdisc=fq" &gt;&gt; /etc/sysctl.conf</span><br><span class="line">echo "net.ipv4.tcp_congestion_control=bbr" &gt;&gt; /etc/sysctl.conf</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令生效</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sysctl -p</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证命令是否生效</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">sysctl net.ipv4.tcp_available_congestion_control</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">net.ipv4.tcp_available_congestion_control = bbr cubic reno</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">sysctl net.ipv4.tcp_congestion_control</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">net.ipv4.tcp_congestion_control = bbr</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证BBR是否启动</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">lsmod | grep bbr</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">tcp_bbr          20480  14</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="CDN"><a href="#CDN" class="headerlink" title="CDN"></a>CDN</h1><p>在外面套一层CDN，即使直连被QQ了也能救回来。使用的是Cloudflare的（别的CDN自然也可以），Cloudflare在国内的速度只能说堪堪能用吧，当然这个要看个人需求。</p>
+<h2 id="注册域名"><a href="#注册域名" class="headerlink" title="注册域名"></a>注册域名</h2><p>要使用CDN，先要有个域名，现在国内外域名价格都差不多，但是国内注册域名要实名验证。</p>
+<p>国内域名注册商：<a href="https://www.dnspod.cn/" target="_blank" rel="noopener external nofollow noreferrer">DNSPOD（腾讯）</a>，<a href="https://wanwang.aliyun.com/" target="_blank" rel="noopener external nofollow noreferrer">万网（阿里）</a></p>
+<p>国外域名注册商：<a href="https://sg.godaddy.com/" target="_blank" rel="noopener external nofollow noreferrer">GoDaddy</a>，<a href="https://www.namesilo.com/" target="_blank" rel="noopener external nofollow noreferrer">NameSilo</a></p>
+<h2 id="Cloudflare"><a href="#Cloudflare" class="headerlink" title="Cloudflare"></a>Cloudflare</h2><p><strong>注册Cloudflare</strong></p>
+<p>Cloudflare注册非常简单，有个邮箱就行了，<a href="https://dash.cloudflare.com/" target="_blank" rel="noopener external nofollow noreferrer">Cloudflare注册地址</a>。</p>
+<p><strong>域名管理</strong></p>
+<p>登录Cloudflare，会让add site，填入刚注册的域名即可。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png" alt="添加域名"></p>
+<p>填完域名后会提示修改Nameservers，需要到域名注册商处将Nameservers改为Cloudflare的Nameservers。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vyc12.png" alt="DNS添加"></p>
+<p><strong>配置SSL/TLS</strong></p>
+<p>配置SSL/TLS，选择Full（strict），选择Flexble会导致黄色云朵点亮的时候，请求失败。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vs1gz.png" alt="SSL/TLS"></p>
+<h1 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h1><p>官方文档里面又有下载地址：<a href="https://www.v2ray.com/awesome/tools.html" target="_blank" rel="noopener external nofollow noreferrer">https://www.v2ray.com/awesome/tools.html</a></p>
+<p>IOS：Shadowrocket ，收费的，且国区账号下不到了，需要注册美区账号，比较麻烦的</p>
+<p>Android：V2RayNG <a href="https://play.google.com/store/apps/details?id=com.v2ray.ang" target="_blank" rel="noopener external nofollow noreferrer">Play Store </a>  |  <a href="https://github.com/2dust/v2rayNG" target="_blank" rel="noopener external nofollow noreferrer">GitHub</a></p>
+<p>Windows：Windows 只推荐<a href="https://github.com/2dust/v2rayN" target="_blank" rel="noopener external nofollow noreferrer">V2RayN </a>，其他用了几个都没这个好用。</p>
+<p>Linux：Linux的客户端就服务端，只是配置文件需要修改下，还有一个小问题，客户端在安装前，理论上是不能访问外站的，但是使用<code>bash &lt;(curl -L -s https://install.direct/go.sh)</code>运行脚本过程中又需要访问外站。先有鸡还是先有蛋:(，所以需要使用go.sh本地安装。</p>
+<ul>
+<li>访问<a href="https://install.direct/go.sh，将go.sh下载到本地" target="_blank" rel="noopener external nofollow noreferrer">https://install.direct/go.sh，将go.sh下载到本地</a></li>
+<li>去GitHub上下载v2ray的<a href="https://github.com/v2ray/v2ray-core/releases" target="_blank" rel="noopener external nofollow noreferrer">releases</a>安装包，将go.sh和安装包放在同一个目录下</li>
+<li>执行本地安装命令<code>bash go.sh --loacl ./v2ray-linux-64.zip</code></li>
+</ul>
+<p>记录一下客户端配置</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  "log": &#123;</span><br><span class="line">    "access": "",</span><br><span class="line">    "error": "",</span><br><span class="line">    "loglevel": "warning"</span><br><span class="line">  &#125;,</span><br><span class="line">  "inbounds": [</span><br><span class="line">    &#123;</span><br><span class="line">      "port": 10808,</span><br><span class="line">      "listen": "127.0.0.1",</span><br><span class="line">      "protocol": "socks",</span><br><span class="line">      "sniffing": &#123;</span><br><span class="line">        "enabled": true,</span><br><span class="line">        "destOverride": [</span><br><span class="line">          "http",</span><br><span class="line">          "tls"</span><br><span class="line">        ]</span><br><span class="line">      &#125;,</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "auth": "noauth",</span><br><span class="line">        "udp": true,</span><br><span class="line">        "ip": null,</span><br><span class="line">        "clients": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "outbounds": [</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "proxy",</span><br><span class="line">      "protocol": "vmess",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": [</span><br><span class="line">          &#123;</span><br><span class="line">            "address": "domain.com",</span><br><span class="line">            "port": 443,</span><br><span class="line">            "users": [</span><br><span class="line">              &#123;</span><br><span class="line">                "id": "*******-c7b0-4642-bd23-*******",</span><br><span class="line">                "alterId": 32,</span><br><span class="line">                "email": "t@t.tt",</span><br><span class="line">                "security": "auto"</span><br><span class="line">              &#125;</span><br><span class="line">            ]</span><br><span class="line">          &#125;</span><br><span class="line">        ],</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": &#123;</span><br><span class="line">        "network": "ws",</span><br><span class="line">        "security": "tls",</span><br><span class="line">        "tlsSettings": &#123;</span><br><span class="line">          "allowInsecure": true,</span><br><span class="line">          "serverName": null</span><br><span class="line">        &#125;,</span><br><span class="line">        "tcpSettings": null,</span><br><span class="line">        "kcpSettings": null,</span><br><span class="line">        "wsSettings": &#123;</span><br><span class="line">          "connectionReuse": true,</span><br><span class="line">          "path": "/****/**",</span><br><span class="line">          "headers": null</span><br><span class="line">        &#125;,</span><br><span class="line">        "httpSettings": null,</span><br><span class="line">        "quicSettings": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "mux": &#123;</span><br><span class="line">        "enabled": true</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "direct",</span><br><span class="line">      "protocol": "freedom",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": null,</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null,</span><br><span class="line">      "mux": null</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "block",</span><br><span class="line">      "protocol": "blackhole",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": null,</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": &#123;</span><br><span class="line">          "type": "http"</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null,</span><br><span class="line">      "mux": null</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "dns": null,</span><br><span class="line">  "routing": &#123;</span><br><span class="line">    "domainStrategy": "IPIfNonMatch",</span><br><span class="line">    "rules": []</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h1><p>Nginx 和Caddy选择一个就行了，但是使用nginx的话还要配合acme申请证书。可以参考[[acme-install|acme.sh申请免费证书]]</p>
+<a href="/archives/bd4e69fb.html" title="acme.sh申请免费证书">acme.sh申请免费证书</a>
+
+<p>如果配合Cloudflare的话，直接使用Cloudflare的免费证书也行，但是这个就只有Cloudflare中启动 Proxy才有用，但是没有acme方便，所以不做详细介绍。</p>
+<h2 id="安装配置"><a href="#安装配置" class="headerlink" title="安装配置"></a>安装配置</h2><p>正常安装即可</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">apt install nginx -y</span><br></pre></td></tr></table></figure>
+
+<p>增加v2ray的nginx配置文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">nano &#x2F;etc&#x2F;nginx&#x2F;conf&#x2F;v2ray.conf</span><br></pre></td></tr></table></figure>
+
+<p>这里除了配置了v2ray还匹配了域名，非指定域名返回500错误</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">upstream v2ray &#123;</span><br><span class="line">    server 127.0.0.1:10086;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 default_server;</span><br><span class="line">    server_name _;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate       /ssl/cloudflare/2225470_xx.domain.com_public.crt;</span><br><span class="line">    ssl_certificate_key   /ssl/cloudflare/2225470_xx.domain.com.key;</span><br><span class="line">    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">    ssl_ciphers           HIGH:!aNULL:!MD5;</span><br><span class="line">    <span class="built_in">return</span> 500;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name xx.domain.com;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate       /ssl/cloudflare/2225470_xx.domain.com_public.crt;</span><br><span class="line">    ssl_certificate_key   /ssl/cloudflare/2225470_xx.domain.com.key;</span><br><span class="line">    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">    ssl_ciphers           HIGH:!aNULL:!MD5;</span><br><span class="line">    root /var/www/html;</span><br><span class="line">    index index.html index.htm index.nginx-debian.html;</span><br><span class="line">    location / &#123;</span><br><span class="line">        try_files <span class="variable">$uri</span> <span class="variable">$uri</span>/ =404;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location /blog/CC &#123;</span><br><span class="line">        proxy_redirect off;</span><br><span class="line">        proxy_pass http://v2ray;</span><br><span class="line">        proxy_http_version 1.1;</span><br><span class="line">        proxy_set_header Upgrade <span class="variable">$http_upgrade</span>;</span><br><span class="line">        proxy_set_header Connection <span class="string">"upgrade"</span>;</span><br><span class="line">        proxy_set_header Host <span class="variable">$http_host</span>;</span><br><span class="line">        proxy_read_timeout 300s;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h2><p>在Ubutnu上Nginx有一个Bug，<code>nginx.service: Failed to read PID from file /run/nginx.pid: Invalid argument</code>，具体信息：<a href="https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1581864" target="_blank" rel="noopener external nofollow noreferrer">https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1581864</a></p>
+<p>使用root用户执行以下命令即可。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkdir /etc/systemd/system/nginx.service.d</span><br><span class="line"><span class="built_in">printf</span> <span class="string">"[Service]\nExecStartPost=/bin/sleep 0.1\n"</span> &gt; /etc/systemd/system/nginx.service.d/override.conf</span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>VPS</category>
+      </categories>
+      <tags>
+        <tag>caddy</tag>
+        <tag>v2ray</tag>
+        <tag>vps</tag>
+        <tag>bbr</tag>
+        <tag>nginx</tag>
+        <tag>cloudflare</tag>
+        <tag>cdn</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>acme.sh申请免费证书</title>
+    <url>/archives/bd4e69fb.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>ACME（自动证书管理环境）是Let’s Encrypt用以实现新的数字证书认证机构的协议，旨在以自动化流程消除手动创建和安装证书的复杂流程，并推广使万维网服务器的加密连接无所不在，为安全网站提供免费的SSL/TLS证书。</p>
+<p>ACME只是一个协议，任何人都可以利用这个协议实现一个客户端，获取免费的证书，例如Certbot、acme.sh等Caddy中的自动证书也是基于这个协议。</p>
+<p>官方主推的Certbot客户端，不过acme.sh用的很方便，也就不再去折腾了。</p>
+<p>Let’s Encrypt官方文档：<a href="https://letsencrypt.org/zh-cn/docs/" target="_blank" rel="noopener external nofollow noreferrer">https://letsencrypt.org/zh-cn/docs/</a></p>
+<p>acme.sh中文文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/说明" target="_blank" rel="noopener external nofollow noreferrer">https://github.com/acmesh-official/acme.sh/wiki/%E8%AF%B4%E6%98%8E</a></p>
+<a id="more"></a>
+
+<h1 id="安装acme-sh"><a href="#安装acme-sh" class="headerlink" title="安装acme.sh"></a>安装acme.sh</h1><p><strong>脚本安装</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">curl  https://get.acme.sh | sh</span><br></pre></td></tr></table></figure>
+
+<p>安装完后所有的文件都在用户的home目录下：<code>~/.acme.sh/</code></p>
+<p>并且会自动创建一个cronjob，每天0:00自动检测所有的证书。</p>
+<p><strong>验证方法</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment">#查看crontab</span></span><br><span class="line">crontab -l</span><br><span class="line"><span class="comment">#生成的cronjob</span></span><br><span class="line">0 0 * * * <span class="string">"/root/.acme.sh"</span>/acme.sh --cron --home <span class="string">"/root/.acme.sh"</span> &gt; /dev/null</span><br></pre></td></tr></table></figure>
+
+<p><strong>创建别名</strong></p>
+<p>创建别名是为了方便命令配置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">alias</span> acme.sh=<span class="string">'/root/.acme.sh/acme.sh'</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="生成证书"><a href="#生成证书" class="headerlink" title="生成证书"></a>生成证书</h1><p><strong>acme.sh</strong> 实现了 <strong>acme</strong> 协议支持的所有验证协议. 一般有两种方式验证: http 和 dns 验证.</p>
+<h2 id="HTTP方式"><a href="#HTTP方式" class="headerlink" title="HTTP方式"></a>HTTP方式</h2><p>1、http 方式需要在你的网站根目录下放置一个文件, 来验证你的域名所有权,完成验证. 然后就可以生成证书了</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh  --issue  -d mydomain.com -d www.mydomain.com  --webroot  /home/wwwroot/mydomain.com/</span><br></pre></td></tr></table></figure>
+
+<p>2、如果使用apache或者nginx可以不需要指定根目录</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh --issue  -d mydomain.com   --apache</span><br><span class="line">acme.sh --issue  -d mydomain.com   --nginx</span><br></pre></td></tr></table></figure>
+
+<p>3、如果没有运行web服务，那么 <strong>acme.sh</strong> 还能假装自己是一个webserver, 临时听在<strong>80</strong> 端口, 完成验证</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh  --issue -d mydomain.com   --standalone</span><br></pre></td></tr></table></figure>
+
+<h2 id="DNS方式"><a href="#DNS方式" class="headerlink" title="DNS方式"></a>DNS方式</h2><h3 id="获取API信息"><a href="#获取API信息" class="headerlink" title="获取API信息"></a>获取API信息</h3><p>DNS方式需要在域名商添加一条TXT的解析记录，以验证域名所有权。</p>
+<p><strong>acme.sh</strong> 目前支持 cloudflare, dnspod, cloudxns, godaddy 以及 ovh 等数十种解析商的自动集成，即通过API接口，自动添加TXT记录，完成自动验证。</p>
+<p>具体接口参数可以参看官方文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/dnsapi" target="_blank" rel="noopener external nofollow noreferrer">https://github.com/acmesh-official/acme.sh/wiki/dnsapi</a></p>
+<p>以 Cloudflare 为例, 先登录到 Cloudflare  账号, 生成 <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener external nofollow noreferrer">API Key</a>，查看Global API Key</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12wd6zz.png" alt="Cloudflare API key"></p>
+<h3 id="设置环境变量"><a href="#设置环境变量" class="headerlink" title="设置环境变量"></a>设置环境变量</h3><p>就是Cloudflare的全局Key和注册邮箱</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> CF_Key=<span class="string">"sdfsdfsdfljlbjkljlkjsdfoiwje"</span></span><br><span class="line"><span class="built_in">export</span> CF_Email=<span class="string">"xxxx@sss.com"</span></span><br></pre></td></tr></table></figure>
+
+<p>这个临时环境变量只需配置这一次，当成功申请证书后，API 信息会被自动保存在<code>~/.acme.sh/account.conf</code>下次使用<code>acme.sh</code>时候会被自动调用。</p>
+<h3 id="申请证书"><a href="#申请证书" class="headerlink" title="申请证书"></a>申请证书</h3><p><code>domain.com</code>换成自己的域名即可</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh --issue --dns dns_cf -d domain.com -d *.domain.com</span><br></pre></td></tr></table></figure>
+
+<h3 id="API-Token-方式"><a href="#API-Token-方式" class="headerlink" title="API Token 方式"></a>API Token 方式</h3><p>Cloudflare是可以对单域创建Tokens的，如果不放心使用全局Key，可以使用API Token。</p>
+<p>但是在使用的时候需要注意权限配置及作用范围</p>
+<table>
+<thead>
+<tr>
+<th>Permissions</th>
+<th>Resources</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Zone.Zone, Zone.DNS</td>
+<td>All zones</td>
+</tr>
+</tbody></table>
+<p>在配置变量时只需要配置<code>CF_Token</code> <code>CF_Account_ID</code></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export CF_Token&#x3D;&quot;sdfsdfsdfljlbjkljlkjsdfoiwje&quot;</span><br><span class="line">export CF_Account_ID&#x3D;&quot;sdfsdfsdfljlbjkljlkjsdfoiwje&quot;</span><br></pre></td></tr></table></figure>
+
+<h1 id="安装证书"><a href="#安装证书" class="headerlink" title="安装证书"></a>安装证书</h1><p>默认生成的证书都放在安装目录下: <code>~/.acme.sh/</code>, 请不要直接使用此目录下的文件, 例如: 不要直接让 nginx/apache 的配置文件使用这下面的文件. 这里面的文件都是内部使用, 而且目录结构可能会变化.</p>
+<p>正确的使用方法是使用 <code>--installcert</code> 命令,并指定目标位置, 然后证书文件会被copy到相应的位置</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh --installcert -d domain.com \</span><br><span class="line">--key-file       /path/to/ssl/domain.com.key  \</span><br><span class="line">--fullchain-file /path/to/ssl/domain.com.cert \</span><br><span class="line">--reloadcmd     <span class="string">"systemctl force-reload nginx squid"</span></span><br></pre></td></tr></table></figure>
+
+<p>证书每次续期后会自动重启nginx，使用<code>force-reload</code>而不是<code>reload</code></p>
+<h1 id="更新相关"><a href="#更新相关" class="headerlink" title="更新相关"></a>更新相关</h1><h2 id="证书更新"><a href="#证书更新" class="headerlink" title="证书更新"></a>证书更新</h2><p>目前证书在 60 天以后会自动更新, 无需任何操作. 都是自动更新的</p>
+<h2 id="更新acme-sh"><a href="#更新acme-sh" class="headerlink" title="更新acme.sh"></a>更新acme.sh</h2><p>配置自动更新acme.sh程序</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">acme.sh  --upgrade  --auto-upgrade</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>域名</category>
+      </categories>
+      <tags>
+        <tag>acme</tag>
+        <tag>domain</tag>
+        <tag>Encrypt</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git代理配置</title>
+    <url>/archives/aa7e6513.html</url>
+    <content><![CDATA[<h1 id="Git代理设置、查看、取消代理"><a href="#Git代理设置、查看、取消代理" class="headerlink" title="Git代理设置、查看、取消代理"></a>Git代理设置、查看、取消代理</h1><p>设置代理：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#39;http:&#x2F;&#x2F;127.0.0.1:8080&#39; </span><br><span class="line">git config --global https.proxy &#39;https:&#x2F;&#x2F;127.0.0.1:8443&#39;</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+
+<p>查看代理：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global --get http.proxy</span><br><span class="line">git config --global --get https.proxy</span><br></pre></td></tr></table></figure>
+<p>取消代理：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global --unset http.proxy</span><br><span class="line">git config --global --unset https.proxy</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>软件</category>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Git本地环境搭建</title>
+    <url>/archives/42009ab4.html</url>
+    <content><![CDATA[<h2 id="下载安装Git"><a href="#下载安装Git" class="headerlink" title="下载安装Git"></a>下载安装Git</h2><p><a href="https://git-scm.com/downloads" target="_blank" rel="noopener external nofollow noreferrer">https://git-scm.com/downloads</a></p>
+<h2 id="配置用户名和邮箱"><a href="#配置用户名和邮箱" class="headerlink" title="配置用户名和邮箱"></a>配置用户名和邮箱</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config --global user.name "XXX"</span><br><span class="line">git config --global user.email "XXXXXX@gmail.com"</span><br></pre></td></tr></table></figure>
+
+<p>注：此用户名和邮箱是 git 提交代码时用来显示你身份和联系方式的，并不是 GitHub 用户名和邮箱。</p>
+<p><strong>查看命令</strong></p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git config user.name</span><br><span class="line">git config user.email</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h2 id="配置SSH秘钥"><a href="#配置SSH秘钥" class="headerlink" title="配置SSH秘钥"></a>配置SSH秘钥</h2><p>1、运行 Git Bash</p>
+<p>2、生成秘钥对</p>
+<p>查看是否存在秘钥，windows秘钥存放位置：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">C:&#x2F;Users&#x2F;用户名&#x2F;.ssh</span><br></pre></td></tr></table></figure>
+
+<p>3、生成秘钥</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh-keygen -t rsa -C &quot;caichao198805@gmail.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>一路Enter就行，公钥位置为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">C:&#x2F;Users&#x2F;用户名&#x2F;.ssh&#x2F;id_rsa.pub</span><br></pre></td></tr></table></figure>
+
+<p>4、添加公钥到github仓库</p>
+<p>复制公钥内容</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat ~&#x2F;.ssh&#x2F;id_rsa.pub</span><br></pre></td></tr></table></figure>
+
+<p>登陆GitHub 帐户，点击右上角的头像，然后 </p>
+<p><code>Settings -&gt; 左栏点击 SSH and GPG keys -&gt; 点击 New SSH key -&gt; 然后你复制上面的公钥内容，粘贴进“Key”文本域内。title域，自己随便起个名字。 -&gt; 点击 Add key。</code></p>
+<p>测试key是否生效</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -T git@github.com</span><br></pre></td></tr></table></figure>
+
+<p>看见以下就是成功：</p>
+<p><code>Hi XXX! You&#39;ve successfully authenticated, but GitHub does not provide shell access.</code></p>
+]]></content>
+      <categories>
+        <category>软件</category>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo命令汇总</title>
+    <url>/archives/8bb4c5fa.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>hexo的命令并不算多，常用命令更少，基本使用一遍就能记得。在此记录一下，方便查找。</p>
+<h1 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h1><p>新建文章<br><code>hexo n &quot;my-first-blog&quot;</code> </p>
+<p>新建草稿<br><code>hexo n draft &quot;my-first-blog&quot;</code> </p>
+<p>移动草稿到正文<br><code>hexo publish &quot;my-first-blog&quot;</code> </p>
+<p>清除缓存、静态文件并生成网站静态文件<br><code>hexo clean &amp;&amp; hexo g</code><br><code>hexo g -f</code></p>
+<p>生成网站静态文件并部署到git<br><code>hexo g -d</code>  </p>
+<p>生成网站静态文件并再本地启动预览<br><code>hexo g &amp;&amp; hexo s</code></p>
+<a id="more"></a>
+
+<h1 id="命令说明"><a href="#命令说明" class="headerlink" title="命令说明"></a>命令说明</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n &quot;my-first-blog&quot;</span><br></pre></td></tr></table></figure>
+
+<p>新建一篇标题为 <strong><em>my-first-blog</em></strong> 的文章，文件生成在<code>source/_posts下面</code>;<br>也可以直接在目录下新建<strong><em>my-first-blog.md</em></strong>文件，不过要手动加 Front-matter ;<br><code>hexo n</code>是<code>hexo new</code>的简写，命令效果一样；<br>此命令同时等同于<code>hexo n post &quot;my-first-blog&quot;</code>，使用<code>hexo n</code>命令的格式为<code>hexo new [layout] &lt;title&gt;</code>，不带<code>[layout]</code>时会依据 <code>_config.yml</code>中的<code>default_layout:</code>配置填充。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n page tags</span><br></pre></td></tr></table></figure>
+
+<p>新增一个名为tags的页面，在<code>source</code>目录下生成<code>tags/index.md</code>文件；<br>同样可以直接手动新建，也是要手动加 Front-matter ；</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n draft tags</span><br></pre></td></tr></table></figure>
+
+<p>新增一个名为tags的草稿，在<code>source/_drafts</code>目录下生成<code>tags.md</code>文件；<br>同样可以直接手动新建，也是要手动加 Front-matter ；<br>在生成静态页面时，草稿文件不会被渲染。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo p tags</span><br></pre></td></tr></table></figure>
+
+<p>发表草稿tags到正文，将tags.md文件从<code>source/_drafts</code>移动到<code>source/_posts下面</code>;<br>手动移动的效果相同，使用命令的好处是，会自动将_posts的模板套用上来；<br><code>hexo p</code>是<code>hexo publish</code>的简写，命令效果一样。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo g</span><br></pre></td></tr></table></figure>
+
+<p>生成网站静态文件到public目录；<br><code>hexo g -f</code>强制重新生成文件， 效果类似于<code>hexo c &amp;&amp; hexo g</code>；<br><code>hexo g</code>是<code>hexo generate</code>的简写，命令效果一样。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo clean</span><br></pre></td></tr></table></figure>
+
+<p>清除缓存文件 <code>db.json</code>和已生成的静态文件 <code>public</code>；<br>发现对站点更改的内容无法生效时，使用此命令可以解决。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
+
+<p>启动服务器。默认情况下，访问网址为： <a href="http://localhost:4000/；" target="_blank" rel="noopener external nofollow noreferrer">http://localhost:4000/；</a><br>主要用于预览主题，在本地调试站点配置等操作；<br><code>hexo s</code>是<code>hexo server</code>的简写，命令效果一样。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo d</span><br></pre></td></tr></table></figure>
+
+<p>部署网站到制动的仓库，需要配合<code>hexo-deployer-git插件使用</code>，安装方式:<code>npm install hexo-deployer-git --save</code>；<br>需要在站点配置文件<code>_config.yml</code>中配置仓库信息，可配置多个如做双线的时候，配置git和coding的仓库同时同步；<br><code>hexo d</code>是<code>hexo deploy</code>的简写，命令效果一样。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo v</span><br></pre></td></tr></table></figure>
+
+<p>查看hexo的版本号，一般在新安装及升级后校验用；<br><code>hexo v</code>是<code>hexo version</code>的简写，命令效果一样。</p>
+<p>还有一些其他的命令，但是基本不会用到，有兴趣的可以参见<a href="https://hexo.io/zh-cn/docs/commands" target="_blank" rel="noopener external nofollow noreferrer">官方文档</a>    </p>
+]]></content>
+      <categories>
+        <category>软件</category>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>家庭NAS折腾记-综述</title>
+    <url>/archives/92ef66de.html</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>编写本篇文章的主要是对自己折腾NAS的一个学习的记录和总结，以及在折腾的过程中，发现能搜索到的大部分文章都没有具体的操作过程，像我这种很懒得人就想照着文档做的机会都没有，还得各种花式翻资料。所以在折腾的过程中就蒙生了写一个能照着做的文档，即方总结自己，也希望能帮到别人。</p>
+<a id="more"></a>
+
+<h1 id="需求分析"><a href="#需求分析" class="headerlink" title="需求分析"></a>需求分析</h1><p>折腾这个其实是挺机缘巧合的一件事，逛张大妈家的时候，看到了一篇推蜗牛星际的文章，一套加起来还不到300，对比下其他的NAS配件，光是机箱也差不多这个价了吧，某宝搜了一下，就入手了。所以买的时候是没有任何对NAS的需求，只是一时兴起，加上确实便宜。并且稍微研究了下几款机箱，不打算花更多钱的情况下， 也就不考虑软路由加虚拟机了，就入手了C款，单网卡的。</p>
+<p>折腾完了之后想想，其实一般人用家庭NAS的需求并不会太多，主要应该就：</p>
+<p>1、私密文件存储，如照片啊之类（还有大姐姐）；</p>
+<p>2、离线下载，免费资源下载（大姐姐下载） ；</p>
+<p>3、多媒体中心，电影、剧集整理及播放；</p>
+<p>4、其他，图片服务器、多网盘同步、PT等。</p>
+<h1 id="成本核算"><a href="#成本核算" class="headerlink" title="成本核算"></a>成本核算</h1><p>机箱：蜗牛星际C款300</p>
+<p>硬盘：3块4T硬盘1800</p>
+<p>断电保护：UPS电源200</p>
+<p>电费：现在功率40W左右，每年200元</p>
+<p>一年成本在2500样子，不算维护逐年加200，算5年就是：3300元。</p>
+<p>当然，如果你说用不了5年，嘿嘿，入了NAS的坑，还想出去？数据都不要了哈，那你就只能更新设备喽，又是一大笔。</p>
+<p>3300元用5年，看着挺核算的是吧。但是如果只有存文件的和下载的需求，百度网盘就能满足你。</p>
+<p>百度超级网盘是260块一年，除了你的隐私不能保证外，都挺好的。3300元，也已经够百度超级网盘买10多年了得超级会员了。仔细考虑自己组NAS的需求，千万别拍脑袋就买了。</p>
+<p>自己折腾是比较费事的，还得算上后期维护成本。所以推荐非技术侧用户直接买成品NAS，并且成品NAS的耗电还会更低，使用寿命也比自组的更长。</p>
+<h1 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h1><p><img src="https://nextcloud.cc2048.top:8443/s/H7CZKmdxjdgxR9q/preview" alt="整体结构" title="点击查看大图"> </p>
+]]></content>
+      <categories>
+        <category>NAS</category>
+      </categories>
+      <tags>
+        <tag>NAS</tag>
+      </tags>
+  </entry>
+</search>

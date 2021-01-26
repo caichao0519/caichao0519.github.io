@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto Serif SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cc2048.com","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘read failure了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是badblocks修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。  之前没截图，这个是最后已经恢复的图片，可以看到中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="diskerr">
+<meta property="og:url" content="https://cc2048.com/archives/722501a8.html">
+<meta property="og:site_name" content="cc&#39;s blog">
+<meta property="og:description" content="前言家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘read failure了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是badblocks修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。  之前没截图，这个是最后已经恢复的图片，可以看到中">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png">
+<meta property="article:published_time" content="2020-06-26T22:38:32.000Z">
+<meta property="article:modified_time" content="2020-12-17T06:38:53.338Z">
+<meta property="article:author" content="cc">
+<meta property="article:tag" content="debian">
+<meta property="article:tag" content="disk">
+<meta property="article:tag" content="smart">
+<meta property="article:tag" content="badblocks">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png">
+
+<link rel="canonical" href="https://cc2048.com/archives/722501a8.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>diskerr | cc's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="cc's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">cc's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">123</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">8</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">9</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tools/" rel="section"><i class="fa fa-fw fa-rocket"></i>实用工具</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cc2048.com/archives/722501a8.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="cc">
+      <meta itemprop="description" content="234">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="cc's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          diskerr
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-26 22:38:32" itemprop="dateCreated datePublished" datetime="2020-06-26T22:38:32Z">2020-06-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-12-17 06:38:53" itemprop="dateModified" datetime="2020-12-17T06:38:53Z">2020-12-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%B3%BB%E7%BB%9F/" itemprop="url" rel="index"><span itemprop="name">系统</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/archives/722501a8.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/archives/722501a8.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘<code>read failure</code>了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是<code>badblocks</code>修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png" alt="SMART测试结果"></p>
+<p>之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。</p>
+<a id="more"></a>
+
+<h1 id="硬盘坏道"><a href="#硬盘坏道" class="headerlink" title="硬盘坏道"></a>硬盘坏道</h1><p>硬盘坏道就是机械硬盘在使用过程中产生的各种各样问题中最严重的一种，硬盘坏道出现，基本就代表硬盘寿命的终结，只能想办法拖延报废时间，无法解决坏道的问题。硬盘坏道主要是因为硬盘本身的质量以及老化，其次就是平时在使用上没有好好爱护，比如内存太少以致应用软件对硬盘频繁访问、对硬盘过分频繁地整理碎片、不适当的超频、电源质量不好、温度过高、防尘不良、震动等，诸类问题都可能引起硬盘坏道。</p>
+<h2 id="主要原因"><a href="#主要原因" class="headerlink" title="主要原因"></a>主要原因</h2><p><strong>1、非法关机</strong><br>硬盘在工作时是不能突然断电和非法关机的，这点大家要切记，这也是使硬盘最容易产生坏道的重要原因之一。原因很简单：当硬盘在工作中是，盘片处于高速运转状态，磁头停留在盘片的不同位置读取磁盘中存放的数据。如果中途突然断电，磁头便会迅速做归位动作，则可能导致磁头与盘片猛烈磨擦而损坏硬盘盘片。因此在工作中，千万要避免突然断电导致非法关机，另外其它的非法关机操作也要尽量的避免。再者windwos自带重新启动功能也尽量少用，因为这一功能会使硬盘在瞬间突然断电加电，也极容易引起硬盘的各种故障，如果需要重新启动，则正确的方法是在电脑关闭10秒钟以后再按开机按钮打开电脑。</p>
+<p><strong>2、静电</strong><br>静电对电脑硬盘的损害大家也许再熟悉不过了，对于硬盘而言，其背部的电路版同样会受到静电的伤害。因些，不能用手随便地触摸硬盘背面的电路板。这是因为在气候干燥时，人体通常带有静电，在这种情况下用手触摸硬盘背面的电路板，则人体静电就可能伤害到硬盘上的电子元器件，导致硬盘无法正常运行。</p>
+<p>在用手拿硬盘时应该抓住硬盘两侧，并避免与其背面的电路板直接接触。有些类型的硬盘会在其外部包上一层护膜，它除具备防震功能外，更把电路板保护其中，这样我们就可以不用担心什么静电了。</p>
+<p><strong>3、高温</strong><br>温度对硬盘的寿命也是有很大影响的。硬盘工作时会产生一定热量，使用中存在散热问题。温度以20～25℃为宜，过高或过低都会使晶体振荡器的时钟主频发生改变。温度还会造成硬盘电路元器件失灵，磁介质也会因热胀效应而造成记录错误。温度过低，空气中的水分会被凝结在集成电路元器件上，造成短路。</p>
+<p>湿度过高时，电子元器件表面可能会吸附一层水膜，氧化、腐蚀电子线路，以致接触不良，甚至短路，还会使磁介质的磁力发生变化，造成数据的读写错误；湿度过低，容易积累大量的因机器转动而产生的静电荷，从而烧坏CMOS电路，吸附灰尘而损坏磁头、划伤磁盘片。机房内的湿度以45～65%为宜。注意使空气保持干燥或经常给系统加电，靠自身发热将机内水汽蒸发掉。另外，尽量不要使硬盘靠近强磁场，如音箱、喇叭、电机、电台、手机等，以免硬盘所记录的数据因磁化而损坏。</p>
+<p><strong>4、震动</strong><br>硬盘的制造过程十分的复杂，工艺十分精密，虽然各大硬盘厂商都在硬盘中加入了防震抗摔功能，但碰撞和震动依然是困绕硬盘的几大杀手之一。过度的碰撞和长期工作在震动的环境下极易造成硬盘盘片与磁头结合不严密，磁头断裂的现象，特别是在硬盘工作中，后果将会更加的严重。因此，一定要将硬盘紧密的固定的机箱内部，上紧每一颗螺丝。另外工作过程不要直接移动硬盘和移动机箱，需要将电脑移动位置时切记要轻拿轻放，防止硬盘碰撞造成损坏。</p>
+<p><strong>5、灰尘</strong><br>灰尘对硬盘的损害是非常大的，可以说灰尘是硬盘的头号杀手。大家知道硬盘的磁头与盘片接触是十分紧密的，不允许有半点的灰尘，如果灰尘落入硬盘盘片上后，那么就意识着硬盘离损坏为期不晚。</p>
+<p>另外，如果在灰尘严重的环境下长期工作，硬盘很容易吸引空气中的灰尘颗粒，使其长期积累在硬盘的内部电路元器件上，会影响电子元器件的热量散发，使得电路元器件的温度上升，产生漏电或烧坏元件。灰尘也可能吸收水分，腐蚀硬盘内部的电子线路，造成一些莫名其妙的问题，所以灰尘体积虽小，但对硬盘的危害是绝对不可低估。因此必须保持环境卫生，减少空气中的潮湿度和含尘量。</p>
+<h2 id="坏道类型"><a href="#坏道类型" class="headerlink" title="坏道类型"></a>坏道类型</h2><p>硬盘的坏道分两种类型：逻辑坏道和物理坏道。</p>
+<p>物理坏道：顾名思义就是硬盘实体有损坏的地方，只要有1个坏道，很快硬盘就会产生更多坏道而报废，隔离坏道也只能拖延硬盘报废的时间，即使拖延也可能拖不久，和硬盘中的重要数据相比，还是赶紧换了的好。</p>
+<p>逻辑坏道：是磁盘磁道上面的校验信息（ECC）跟磁道的数据对不上号所致。出现这一故障的原因，通常都是因为一些程序的错误操作或是该处扇区的磁介质开始出现不稳定的先兆。物理坏道也是逻辑坏道产生的一种原因，一般可用软件修复。</p>
+<h1 id="解决过程"><a href="#解决过程" class="headerlink" title="解决过程"></a>解决过程</h1><h2 id="检索坏道"><a href="#检索坏道" class="headerlink" title="检索坏道"></a>检索坏道</h2><p>使用<code>badblocks</code>命令检查硬盘坏道：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">badblocks -s -v -o /root/sdd.log /dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>以上是检查整块sdd硬盘，并将坏块结果输出到/root/sdd.log中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cat &#x2F;root&#x2F;sdd.log</span><br><span class="line">3630171136</span><br><span class="line">3630171137</span><br><span class="line">3630171138</span><br><span class="line">3630171139</span><br></pre></td></tr></table></figure>
+
+<h2 id="备份数据"><a href="#备份数据" class="headerlink" title="备份数据"></a>备份数据</h2><p>有重要数据就备份，也可以不备份</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if=/dev/sdd  skip=3630171136 of=/tmp/3630171136-3630171139.dat count=4</span><br></pre></td></tr></table></figure>
+
+<p>if：需要备份的硬盘</p>
+<p>skip：对原文件（if后的部分）跳过多少块再开始备份</p>
+<p>of：文件备份目标</p>
+<p>count：备份多少块</p>
+<h2 id="卸载硬盘"><a href="#卸载硬盘" class="headerlink" title="卸载硬盘"></a>卸载硬盘</h2><p>在使用的硬盘是无法修复的，必须要先<code>umont</code>硬盘后才能开始修复</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">umount /dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>如果提示”Device busy”是因为有程序在使用这个分区，需要将这些进程都关闭。需要使用命令查看哪些进程使用了该目录。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">fuser -m /home</span><br><span class="line">fuser -m -v -i -k /home</span><br></pre></td></tr></table></figure>
+
+<p>第一条fuser命令列出使用/home的进程ID，第二条列出PID并kill掉进程（带有提示确认），建议先使用第一条命令列出PID，然后针对查看是哪些类型的进程，不要盲目杀死进程。</p>
+<h2 id="修复硬盘"><a href="#修复硬盘" class="headerlink" title="修复硬盘"></a>修复硬盘</h2><p>umount 分区成功后，修复命令如下，其中-s表示给出进度，-w表示写入修复的，后面是结束（END）和开始（START）块号，注意END在前，START在后。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">badblocks -s -w /dev/sdd 3630171139 3630171136</span><br></pre></td></tr></table></figure>
+
+<p>修复完成后重新检查坏块区</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">badblocks -s -v /dev/sdd 3630171139 3630171136</span><br></pre></td></tr></table></figure>
+
+<h2 id="恢复数据"><a href="#恢复数据" class="headerlink" title="恢复数据"></a>恢复数据</h2><p>之前做数据备份的现在可以恢复数据了</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dd if=/tmp/217874591-217874595.dat of=/dev/sdd</span><br></pre></td></tr></table></figure>
+
+<p>最后将硬盘mount 回去</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount /dev/sdd /home</span><br></pre></td></tr></table></figure>
+
+<h1 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h1><p><a href="https://blog.csdn.net/LANGZI7758521/java/article/details/52318201" target="_blank" rel="noopener external nofollow noreferrer">硬盘坏道一般原因</a></p>
+<p><a href="https://www.jianshu.com/p/0b7c7e9a8779" target="_blank" rel="noopener external nofollow noreferrer">Linux服务器磁盘坏道的修复过程</a></p>
+
+    </div>
+
+    
+    
+    
+      
+
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="cc 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.png" alt="cc 支付宝">
+        <p>支付宝</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/paypal.png" alt="cc PayPal">
+        <p>PayPal</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>cc
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cc2048.com/archives/722501a8.html" title="diskerr">https://cc2048.com/archives/722501a8.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/debian/" rel="tag"><i class="fa fa-tag"></i> debian</a>
+              <a href="/tags/disk/" rel="tag"><i class="fa fa-tag"></i> disk</a>
+              <a href="/tags/smart/" rel="tag"><i class="fa fa-tag"></i> smart</a>
+              <a href="/tags/badblocks/" rel="tag"><i class="fa fa-tag"></i> badblocks</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/archives/c4788f70.html" rel="prev" title="Squid代理服务器搭建">
+      <i class="fa fa-chevron-left"></i> Squid代理服务器搭建
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/archives/95d3d41d.html" rel="next" title="Caddy正向代理">
+      Caddy正向代理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#硬盘坏道"><span class="nav-number">2.</span> <span class="nav-text">硬盘坏道</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#主要原因"><span class="nav-number">2.1.</span> <span class="nav-text">主要原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#坏道类型"><span class="nav-number">2.2.</span> <span class="nav-text">坏道类型</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解决过程"><span class="nav-number">3.</span> <span class="nav-text">解决过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#检索坏道"><span class="nav-number">3.1.</span> <span class="nav-text">检索坏道</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#备份数据"><span class="nav-number">3.2.</span> <span class="nav-text">备份数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#卸载硬盘"><span class="nav-number">3.3.</span> <span class="nav-text">卸载硬盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修复硬盘"><span class="nav-number">3.4.</span> <span class="nav-text">修复硬盘</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#恢复数据"><span class="nav-number">3.5.</span> <span class="nav-text">恢复数据</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文档"><span class="nav-number">4.</span> <span class="nav-text">参考文档</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="cc"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">cc</p>
+  <div class="site-description" itemprop="description">234</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/caichao0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;caichao0519" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yourname@gmail.com" title="E-Mail → mailto:yourname@gmail.com" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+  </div>
+
+
+
+    <div class="links-of-blogroll motion-element links-of-blogroll-block">
+      <div class="links-of-blogroll-title">
+        <!-- modify icon to fire by szw -->
+        <i class="fa fa-history fa-" aria-hidden="true"></i>
+        近期文章
+      </div>
+      <ul class="links-of-blogroll-list">
+        
+        
+          <li>
+            <a href="/archives/95d3d41d.html" title="Caddy正向代理" target="_blank">Caddy正向代理</a>
+          </li>
+        
+          <li>
+            <a href="/archives/722501a8.html" title="diskerr" target="_blank">diskerr</a>
+          </li>
+        
+          <li>
+            <a href="/archives/c4788f70.html" title="Squid代理服务器搭建" target="_blank">Squid代理服务器搭建</a>
+          </li>
+        
+          <li>
+            <a href="/archives/869e664c.html" title="WebSocket+TLS+Caddy+V2ray+CDN" target="_blank">WebSocket+TLS+Caddy+V2ray+CDN</a>
+          </li>
+        
+          <li>
+            <a href="/archives/bd4e69fb.html" title="acme.sh申请免费证书" target="_blank">acme.sh申请免费证书</a>
+          </li>
+        
+      </ul>
+    </div>
+
+
+<div style="">
+  <canvas id="canvas" style="width:60%;">当前浏览器不支持canvas，请更换浏览器后再试</canvas>
+</div>
+<script>
+(function(){
+
+   var digit=
+    [
+        [
+            [0,0,1,1,1,0,0],
+            [0,1,1,0,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,0,1,1,0],
+            [0,0,1,1,1,0,0]
+        ],//0
+        [
+            [0,0,0,1,1,0,0],
+            [0,1,1,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [1,1,1,1,1,1,1]
+        ],//1
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,0,0,0],
+            [0,1,1,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,0,0,0,1,1],
+            [1,1,1,1,1,1,1]
+        ],//2
+        [
+            [1,1,1,1,1,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//3
+        [
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,1,0],
+            [0,0,1,1,1,1,0],
+            [0,1,1,0,1,1,0],
+            [1,1,0,0,1,1,0],
+            [1,1,1,1,1,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,1,1]
+        ],//4
+        [
+            [1,1,1,1,1,1,1],
+            [1,1,0,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,1,1,1,1,0],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//5
+        [
+            [0,0,0,0,1,1,0],
+            [0,0,1,1,0,0,0],
+            [0,1,1,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,0,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//6
+        [
+            [1,1,1,1,1,1,1],
+            [1,1,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0]
+        ],//7
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//8
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,1,1,0,0,0,0]
+        ],//9
+        [
+            [0,0,0,0,0,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0]
+        ]//:
+    ];
+
+var canvas = document.getElementById('canvas');
+
+if(canvas.getContext){
+    var cxt = canvas.getContext('2d');
+    //声明canvas的宽高
+    var H = 100,W = 700;
+    canvas.height = H;
+    canvas.width = W;
+    cxt.fillStyle = '#f00';
+    cxt.fillRect(10,10,50,50);
+
+    //存储时间数据
+    var data = [];
+    //存储运动的小球
+    var balls = [];
+    //设置粒子半径
+    var R = canvas.height/20-1;
+    (function(){
+        var temp = /(\d)(\d):(\d)(\d):(\d)(\d)/.exec(new Date());
+        //存储时间数字，由十位小时、个位小时、冒号、十位分钟、个位分钟、冒号、十位秒钟、个位秒钟这7个数字组成
+        data.push(temp[1],temp[2],10,temp[3],temp[4],10,temp[5],temp[6]);
+    })();
+
+    /*生成点阵数字*/
+    function renderDigit(index,num){
+        for(var i = 0; i < digit[num].length; i++){
+            for(var j = 0; j < digit[num][i].length; j++){
+                if(digit[num][i][j] == 1){
+                    cxt.beginPath();
+                    cxt.arc(14*(R+2)*index + j*2*(R+1)+(R+1),i*2*(R+1)+(R+1),R,0,2*Math.PI);
+                    cxt.closePath();
+                    cxt.fill();
+                }
+            }
+        }
+    }
+
+    /*更新时钟*/
+    function updateDigitTime(){
+        var changeNumArray = [];
+        var temp = /(\d)(\d):(\d)(\d):(\d)(\d)/.exec(new Date());
+        var NewData = [];
+        NewData.push(temp[1],temp[2],10,temp[3],temp[4],10,temp[5],temp[6]);
+        for(var i = data.length-1; i >=0 ; i--){
+            //时间发生变化
+            if(NewData[i] !== data[i]){
+                //将变化的数字值和在data数组中的索引存储在changeNumArray数组中
+                changeNumArray.push(i+'_'+(Number(data[i])+1)%10);
+            }
+        }
+        //增加小球
+        for(var i = 0; i< changeNumArray.length; i++){
+            addBalls.apply(this,changeNumArray[i].split('_'));
+        }
+        data = NewData.concat();
+    }
+
+    /*更新小球状态*/
+    function updateBalls(){
+        for(var i = 0; i < balls.length; i++){
+            balls[i].stepY += balls[i].disY;
+            balls[i].x += balls[i].stepX;
+            balls[i].y += balls[i].stepY;
+            if(balls[i].x > W + R || balls[i].y > H + R){
+                balls.splice(i,1);
+                i--;
+            }
+        }
+    }
+
+    /*增加要运动的小球*/
+    function addBalls(index,num){
+        var numArray = [1,2,3];
+        var colorArray =  ["#3BE","#09C","#A6C","#93C","#9C0","#690","#FB3","#F80","#F44","#C00"];
+        for(var i = 0; i < digit[num].length; i++){
+            for(var j = 0; j < digit[num][i].length; j++){
+                if(digit[num][i][j] == 1){
+                    var ball = {
+                        x:14*(R+2)*index + j*2*(R+1)+(R+1),
+                        y:i*2*(R+1)+(R+1),
+                        stepX:Math.floor(Math.random() * 4 -2),
+                        stepY:-2*numArray[Math.floor(Math.random()*numArray.length)],
+                        color:colorArray[Math.floor(Math.random()*colorArray.length)],
+                        disY:1
+                    };
+                    balls.push(ball);
+                }
+            }
+        }
+    }
+
+    /*渲染*/
+    function render(){
+        //重置画布宽度，达到清空画布的效果
+        canvas.height = 100;
+        //渲染时钟
+        for(var i = 0; i < data.length; i++){
+            renderDigit(i,data[i]);
+        }
+        //渲染小球
+        for(var i = 0; i < balls.length; i++){
+            cxt.beginPath();
+            cxt.arc(balls[i].x,balls[i].y,R,0,2*Math.PI);
+            cxt.fillStyle = balls[i].color;
+            cxt.closePath();
+            cxt.fill();
+        }
+    }
+
+    clearInterval(oTimer);
+    var oTimer = setInterval(function(){
+        //更新时钟
+        updateDigitTime();
+        //更新小球状态
+        updateBalls();
+        //渲染
+        render();
+    },50);
+}
+
+})();
+</script>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">cc</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">23k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">21 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Gemini</a> v7.7.2
+  </div><div class="translate-style">
+繁/简：<a id="translateLink" href="javascript:translatePage();" rel="external nofollow noreferrer">繁体
+</a>
+</div>
+<script type="text/javascript" src="/js/tw_cn.js"></script>
+<script type="text/javascript">
+var defaultEncoding = 2; //网站编写字体是否繁体，1-繁体，2-简体
+var translateDelay = 0; //延迟时间,若不在前, 要设定延迟翻译时间, 如100表示100ms,默认为0
+var cookieDomain = "http://localhost:4000/"; //Cookie地址, 一定要设定, 通常为你的网址
+var msgToTraditionalChinese = "繁体"; //此处可以更改为你想要显示的文字
+var msgToSimplifiedChinese = "简体"; //同上，但两处均不建议更改
+var translateButtonId = "translateLink"; //默认互换id
+translateInitilization();
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'WiMNk2IinETjfvFFjazVE1UW-MdYXbMMI',
+      appKey     : 'yOvM4m0ApyT1tOmz0fziJg8C',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="https://fonts.loli.net/css?family=Noto Serif SC:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cc2048.com","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="前言之前的VPS要到期了，正好迁移下VPS，顺带整理下资料。 实现方式：WebSocket+TLS+Caddy&#x2F;Nginx+V2ray+CDN 系统环境：Debian 10 加速：BBR 更新系统更新系统源和软件包 1apt-get update &amp;&amp; apt-get upgrade">
+<meta property="og:type" content="article">
+<meta property="og:title" content="WebSocket+TLS+Caddy+V2ray+CDN">
+<meta property="og:url" content="https://cc2048.com/archives/869e664c.html">
+<meta property="og:site_name" content="cc&#39;s blog">
+<meta property="og:description" content="前言之前的VPS要到期了，正好迁移下VPS，顺带整理下资料。 实现方式：WebSocket+TLS+Caddy&#x2F;Nginx+V2ray+CDN 系统环境：Debian 10 加速：BBR 更新系统更新系统源和软件包 1apt-get update &amp;&amp; apt-get upgrade">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png">
+<meta property="og:image" content="https://pic.cc2048.top:8443/i/2020/05/02/12vyc12.png">
+<meta property="og:image" content="https://pic.cc2048.top:8443/i/2020/05/02/12vs1gz.png">
+<meta property="article:published_time" content="2020-05-03T00:32:15.000Z">
+<meta property="article:modified_time" content="2020-12-17T03:51:20.858Z">
+<meta property="article:author" content="cc">
+<meta property="article:tag" content="caddy">
+<meta property="article:tag" content="v2ray">
+<meta property="article:tag" content="vps">
+<meta property="article:tag" content="bbr">
+<meta property="article:tag" content="nginx">
+<meta property="article:tag" content="cloudflare">
+<meta property="article:tag" content="cdn">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png">
+
+<link rel="canonical" href="https://cc2048.com/archives/869e664c.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>WebSocket+TLS+Caddy+V2ray+CDN | cc's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="cc's blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">cc's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">123</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">8</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">9</span></a>
+
+  </li>
+        <li class="menu-item menu-item-tools">
+
+    <a href="/tools/" rel="section"><i class="fa fa-fw fa-rocket"></i>实用工具</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="search-pop-overlay">
+  <div class="popup search-popup">
+      <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+  </div>
+</div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cc2048.com/archives/869e664c.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="cc">
+      <meta itemprop="description" content="234">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="cc's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          WebSocket+TLS+Caddy+V2ray+CDN
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-03 00:32:15" itemprop="dateCreated datePublished" datetime="2020-05-03T00:32:15Z">2020-05-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-12-17 03:51:20" itemprop="dateModified" datetime="2020-12-17T03:51:20Z">2020-12-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/VPS/" itemprop="url" rel="index"><span itemprop="name">VPS</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/archives/869e664c.html#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/archives/869e664c.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前的VPS要到期了，正好迁移下VPS，顺带整理下资料。</p>
+<p>实现方式：WebSocket+TLS+Caddy/Nginx+V2ray+CDN</p>
+<p>系统环境：Debian 10</p>
+<p>加速：BBR</p>
+<h1 id="更新系统"><a href="#更新系统" class="headerlink" title="更新系统"></a>更新系统</h1><p><strong>更新系统源和软件包</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt-get update &amp;&amp; apt-get upgrade</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h1 id="V2ray"><a href="#V2ray" class="headerlink" title="V2ray"></a>V2ray</h1><p>官站：<a href="https://www.v2ray.com/" target="_blank" rel="noopener external nofollow noreferrer">https://www.v2ray.com/</a></p>
+<p>白话文教程：<a href="https://toutyrater.github.io/" target="_blank" rel="noopener external nofollow noreferrer">https://toutyrater.github.io/</a></p>
+<h2 id="脚本安装"><a href="#脚本安装" class="headerlink" title="脚本安装"></a>脚本安装</h2><p><strong>下载安装</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bash &lt;(curl -L -s https://install.direct/go.sh)</span><br></pre></td></tr></table></figure>
+
+<p><strong>位置查看</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">whereis v2ray</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="编辑配置"><a href="#编辑配置" class="headerlink" title="编辑配置"></a>编辑配置</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano /etc/v2ray/config.json</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>&quot;port&quot;: 10086</code> 换成自己的端口，未被占用就行</li>
+<li>ID需要换成自己的可以使用生成器：<a href="https://www.uuidgenerator.net/version1" target="_blank" rel="noopener external nofollow noreferrer">UUID生成器</a></li>
+<li><code>&quot;path&quot;: &quot;/blog/CC&quot;</code>换成自己的路径，随便填写，与caddy配置匹配就行</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">        "log": &#123;</span><br><span class="line">                "access": "/var/log/v2ray/access.log",</span><br><span class="line">                "error": "/var/log/v2ray/error.log",</span><br><span class="line">                "loglevel": "warning"</span><br><span class="line">        &#125;,</span><br><span class="line">        "inbound": &#123;</span><br><span class="line">                "port": 10086,</span><br><span class="line">                "listen": "127.0.0.1",</span><br><span class="line">                "protocol": "vmess",</span><br><span class="line">                "allocate": &#123;</span><br><span class="line">                        "strategy": "always"</span><br><span class="line">                &#125;,</span><br><span class="line">                "settings": &#123;</span><br><span class="line">                        "clients": [&#123;</span><br><span class="line">                                "id": "********-c7b0-4642-bd23-********",</span><br><span class="line">                                "level": 0,</span><br><span class="line">                                "alterId": 32</span><br><span class="line">                        &#125;]</span><br><span class="line">                &#125;,</span><br><span class="line">                "streamSettings": &#123;</span><br><span class="line">                        "network": "ws",</span><br><span class="line">                        "security": "auto",</span><br><span class="line">                        "wsSettings": &#123;</span><br><span class="line">                                "path": "/****/***"</span><br><span class="line">                        &#125;</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        "outbound": &#123;</span><br><span class="line">                "protocol": "freedom",</span><br><span class="line">                "settings": &#123;&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        "outboundDetour": [&#123;</span><br><span class="line">                "protocol": "blackhole",</span><br><span class="line">                "settings": &#123;&#125;,</span><br><span class="line">                "tag": "blocked"</span><br><span class="line">        &#125;],</span><br><span class="line">        "routing": &#123;</span><br><span class="line">                "strategy": "rules",</span><br><span class="line">                "settings": &#123;</span><br><span class="line">                        "rules": [&#123;</span><br><span class="line">                                "type": "field",</span><br><span class="line">                                "ip": [</span><br><span class="line">                                        "0.0.0.0/8",</span><br><span class="line">                                        "10.0.0.0/8",</span><br><span class="line">                                        "100.64.0.0/10",</span><br><span class="line">                                        "127.0.0.0/8",</span><br><span class="line">                                        "169.254.0.0/16",</span><br><span class="line">                                        "172.16.0.0/12",</span><br><span class="line">                                        "192.0.0.0/24",</span><br><span class="line">                                        "192.0.2.0/24",</span><br><span class="line">                                        "192.168.0.0/16",</span><br><span class="line">                                        "198.18.0.0/15",</span><br><span class="line">                                        "198.51.100.0/24",</span><br><span class="line">                                        "203.0.113.0/24",</span><br><span class="line">                                        "::1/128",</span><br><span class="line">                                        "fc00::/7",</span><br><span class="line">                                        "fe80::/10"</span><br><span class="line">                                ],</span><br><span class="line">                                "outboundTag": "blocked"</span><br><span class="line">                        &#125;]</span><br><span class="line">                &#125;</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证配置</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/v2ray/v2ray -<span class="built_in">test</span> -config=/etc/v2ray/config.json</span><br></pre></td></tr></table></figure>
+
+<p>返回<code>Configuration OK.</code>就算成功。</p>
+<h2 id="启动程序"><a href="#启动程序" class="headerlink" title="启动程序"></a>启动程序</h2><p><strong>开机自启</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl enbale v2ray</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动服务</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl start v2ray</span><br></pre></td></tr></table></figure>
+
+<p><strong>查看运行状态</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl status v2ray</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="Caddy"><a href="#Caddy" class="headerlink" title="Caddy"></a>Caddy</h1><p>官站：<a href="https://caddyserver.com/" target="_blank" rel="noopener external nofollow noreferrer">https://caddyserver.com/</a></p>
+<p>文档：<a href="https://caddyserver.com/docs/" target="_blank" rel="noopener external nofollow noreferrer">https://caddyserver.com/docs/</a></p>
+<p>最坑的是Caddy升级了，V2版本不向下兼容，Caddyfile V1的配置不兼容了。只能按照官方文档调整。</p>
+<h2 id="软件安装"><a href="#软件安装" class="headerlink" title="软件安装"></a>软件安装</h2><p><strong>使用源安装</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">"deb [trusted=yes] https://apt.fury.io/caddy/ /"</span> \</span><br><span class="line">    | tee -a /etc/apt/sources.list.d/caddy-fury.list</span><br><span class="line">apt update</span><br><span class="line">apt install caddy</span><br></pre></td></tr></table></figure>
+
+<h2 id="编辑配置-1"><a href="#编辑配置-1" class="headerlink" title="编辑配置"></a>编辑配置</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano &#x2F;etc&#x2F;caddy&#x2F;Caddyfile</span><br></pre></td></tr></table></figure>
+
+<p>Caddy的配置非常简单，且可以自动申请证书，这也是换用Caddy的原因。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">domain.com</span><br><span class="line">&#123;</span><br><span class="line">  tls 123456@gmail.com</span><br><span class="line">  log /var/log/caddy.log</span><br><span class="line">  root * /var/www/html</span><br><span class="line">  reverse_proxy /blog/CC localhost:10086 &#123;</span><br><span class="line">    header_up -Origin</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="启动程序-1"><a href="#启动程序-1" class="headerlink" title="启动程序"></a>启动程序</h2><p><strong>开机自启</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl enbale caddy</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动服务</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl start caddy</span><br></pre></td></tr></table></figure>
+
+<p><strong>查看运行状态</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl status caddy</span><br></pre></td></tr></table></figure>
+
+<h1 id="BBR加速"><a href="#BBR加速" class="headerlink" title="BBR加速"></a>BBR加速</h1><p>BBR有好几个版本，原版、魔改版、BBR Plus版，原版的加速效果是最差的，不过，最后决定安装原版。</p>
+<p><strong>查看内核版本</strong></p>
+<p>开起BBR需要内核4.9以上</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uname -r</span><br></pre></td></tr></table></figure>
+
+<p><strong>添加变量</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">echo "net.core.default_qdisc=fq" &gt;&gt; /etc/sysctl.conf</span><br><span class="line">echo "net.ipv4.tcp_congestion_control=bbr" &gt;&gt; /etc/sysctl.conf</span><br></pre></td></tr></table></figure>
+
+<p><strong>命令生效</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sysctl -p</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证命令是否生效</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">sysctl net.ipv4.tcp_available_congestion_control</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">net.ipv4.tcp_available_congestion_control = bbr cubic reno</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">sysctl net.ipv4.tcp_congestion_control</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">net.ipv4.tcp_congestion_control = bbr</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证BBR是否启动</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">lsmod | grep bbr</span><br><span class="line"><span class="meta">#</span><span class="bash">显示结果</span></span><br><span class="line">tcp_bbr          20480  14</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="CDN"><a href="#CDN" class="headerlink" title="CDN"></a>CDN</h1><p>在外面套一层CDN，即使直连被QQ了也能救回来。使用的是Cloudflare的（别的CDN自然也可以），Cloudflare在国内的速度只能说堪堪能用吧，当然这个要看个人需求。</p>
+<h2 id="注册域名"><a href="#注册域名" class="headerlink" title="注册域名"></a>注册域名</h2><p>要使用CDN，先要有个域名，现在国内外域名价格都差不多，但是国内注册域名要实名验证。</p>
+<p>国内域名注册商：<a href="https://www.dnspod.cn/" target="_blank" rel="noopener external nofollow noreferrer">DNSPOD（腾讯）</a>，<a href="https://wanwang.aliyun.com/" target="_blank" rel="noopener external nofollow noreferrer">万网（阿里）</a></p>
+<p>国外域名注册商：<a href="https://sg.godaddy.com/" target="_blank" rel="noopener external nofollow noreferrer">GoDaddy</a>，<a href="https://www.namesilo.com/" target="_blank" rel="noopener external nofollow noreferrer">NameSilo</a></p>
+<h2 id="Cloudflare"><a href="#Cloudflare" class="headerlink" title="Cloudflare"></a>Cloudflare</h2><p><strong>注册Cloudflare</strong></p>
+<p>Cloudflare注册非常简单，有个邮箱就行了，<a href="https://dash.cloudflare.com/" target="_blank" rel="noopener external nofollow noreferrer">Cloudflare注册地址</a>。</p>
+<p><strong>域名管理</strong></p>
+<p>登录Cloudflare，会让add site，填入刚注册的域名即可。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png" alt="添加域名"></p>
+<p>填完域名后会提示修改Nameservers，需要到域名注册商处将Nameservers改为Cloudflare的Nameservers。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vyc12.png" alt="DNS添加"></p>
+<p><strong>配置SSL/TLS</strong></p>
+<p>配置SSL/TLS，选择Full（strict），选择Flexble会导致黄色云朵点亮的时候，请求失败。</p>
+<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vs1gz.png" alt="SSL/TLS"></p>
+<h1 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h1><p>官方文档里面又有下载地址：<a href="https://www.v2ray.com/awesome/tools.html" target="_blank" rel="noopener external nofollow noreferrer">https://www.v2ray.com/awesome/tools.html</a></p>
+<p>IOS：Shadowrocket ，收费的，且国区账号下不到了，需要注册美区账号，比较麻烦的</p>
+<p>Android：V2RayNG <a href="https://play.google.com/store/apps/details?id=com.v2ray.ang" target="_blank" rel="noopener external nofollow noreferrer">Play Store </a>  |  <a href="https://github.com/2dust/v2rayNG" target="_blank" rel="noopener external nofollow noreferrer">GitHub</a></p>
+<p>Windows：Windows 只推荐<a href="https://github.com/2dust/v2rayN" target="_blank" rel="noopener external nofollow noreferrer">V2RayN </a>，其他用了几个都没这个好用。</p>
+<p>Linux：Linux的客户端就服务端，只是配置文件需要修改下，还有一个小问题，客户端在安装前，理论上是不能访问外站的，但是使用<code>bash &lt;(curl -L -s https://install.direct/go.sh)</code>运行脚本过程中又需要访问外站。先有鸡还是先有蛋:(，所以需要使用go.sh本地安装。</p>
+<ul>
+<li>访问<a href="https://install.direct/go.sh，将go.sh下载到本地" target="_blank" rel="noopener external nofollow noreferrer">https://install.direct/go.sh，将go.sh下载到本地</a></li>
+<li>去GitHub上下载v2ray的<a href="https://github.com/v2ray/v2ray-core/releases" target="_blank" rel="noopener external nofollow noreferrer">releases</a>安装包，将go.sh和安装包放在同一个目录下</li>
+<li>执行本地安装命令<code>bash go.sh --loacl ./v2ray-linux-64.zip</code></li>
+</ul>
+<p>记录一下客户端配置</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  "log": &#123;</span><br><span class="line">    "access": "",</span><br><span class="line">    "error": "",</span><br><span class="line">    "loglevel": "warning"</span><br><span class="line">  &#125;,</span><br><span class="line">  "inbounds": [</span><br><span class="line">    &#123;</span><br><span class="line">      "port": 10808,</span><br><span class="line">      "listen": "127.0.0.1",</span><br><span class="line">      "protocol": "socks",</span><br><span class="line">      "sniffing": &#123;</span><br><span class="line">        "enabled": true,</span><br><span class="line">        "destOverride": [</span><br><span class="line">          "http",</span><br><span class="line">          "tls"</span><br><span class="line">        ]</span><br><span class="line">      &#125;,</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "auth": "noauth",</span><br><span class="line">        "udp": true,</span><br><span class="line">        "ip": null,</span><br><span class="line">        "clients": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "outbounds": [</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "proxy",</span><br><span class="line">      "protocol": "vmess",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": [</span><br><span class="line">          &#123;</span><br><span class="line">            "address": "domain.com",</span><br><span class="line">            "port": 443,</span><br><span class="line">            "users": [</span><br><span class="line">              &#123;</span><br><span class="line">                "id": "*******-c7b0-4642-bd23-*******",</span><br><span class="line">                "alterId": 32,</span><br><span class="line">                "email": "t@t.tt",</span><br><span class="line">                "security": "auto"</span><br><span class="line">              &#125;</span><br><span class="line">            ]</span><br><span class="line">          &#125;</span><br><span class="line">        ],</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": &#123;</span><br><span class="line">        "network": "ws",</span><br><span class="line">        "security": "tls",</span><br><span class="line">        "tlsSettings": &#123;</span><br><span class="line">          "allowInsecure": true,</span><br><span class="line">          "serverName": null</span><br><span class="line">        &#125;,</span><br><span class="line">        "tcpSettings": null,</span><br><span class="line">        "kcpSettings": null,</span><br><span class="line">        "wsSettings": &#123;</span><br><span class="line">          "connectionReuse": true,</span><br><span class="line">          "path": "/****/**",</span><br><span class="line">          "headers": null</span><br><span class="line">        &#125;,</span><br><span class="line">        "httpSettings": null,</span><br><span class="line">        "quicSettings": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "mux": &#123;</span><br><span class="line">        "enabled": true</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "direct",</span><br><span class="line">      "protocol": "freedom",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": null,</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": null</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null,</span><br><span class="line">      "mux": null</span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">      "tag": "block",</span><br><span class="line">      "protocol": "blackhole",</span><br><span class="line">      "settings": &#123;</span><br><span class="line">        "vnext": null,</span><br><span class="line">        "servers": null,</span><br><span class="line">        "response": &#123;</span><br><span class="line">          "type": "http"</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;,</span><br><span class="line">      "streamSettings": null,</span><br><span class="line">      "mux": null</span><br><span class="line">    &#125;</span><br><span class="line">  ],</span><br><span class="line">  "dns": null,</span><br><span class="line">  "routing": &#123;</span><br><span class="line">    "domainStrategy": "IPIfNonMatch",</span><br><span class="line">    "rules": []</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h1><p>Nginx 和Caddy选择一个就行了，但是使用nginx的话还要配合acme申请证书。可以参考[[acme-install|acme.sh申请免费证书]]</p>
+<a href="/archives/bd4e69fb.html" title="acme.sh申请免费证书">acme.sh申请免费证书</a>
+
+<p>如果配合Cloudflare的话，直接使用Cloudflare的免费证书也行，但是这个就只有Cloudflare中启动 Proxy才有用，但是没有acme方便，所以不做详细介绍。</p>
+<h2 id="安装配置"><a href="#安装配置" class="headerlink" title="安装配置"></a>安装配置</h2><p>正常安装即可</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apt install nginx -y</span><br></pre></td></tr></table></figure>
+
+<p>增加v2ray的nginx配置文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano &#x2F;etc&#x2F;nginx&#x2F;conf&#x2F;v2ray.conf</span><br></pre></td></tr></table></figure>
+
+<p>这里除了配置了v2ray还匹配了域名，非指定域名返回500错误</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">upstream v2ray &#123;</span><br><span class="line">    server 127.0.0.1:10086;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 default_server;</span><br><span class="line">    server_name _;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate       /ssl/cloudflare/2225470_xx.domain.com_public.crt;</span><br><span class="line">    ssl_certificate_key   /ssl/cloudflare/2225470_xx.domain.com.key;</span><br><span class="line">    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">    ssl_ciphers           HIGH:!aNULL:!MD5;</span><br><span class="line">    <span class="built_in">return</span> 500;</span><br><span class="line">&#125;</span><br><span class="line">server &#123;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    server_name xx.domain.com;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate       /ssl/cloudflare/2225470_xx.domain.com_public.crt;</span><br><span class="line">    ssl_certificate_key   /ssl/cloudflare/2225470_xx.domain.com.key;</span><br><span class="line">    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">    ssl_ciphers           HIGH:!aNULL:!MD5;</span><br><span class="line">    root /var/www/html;</span><br><span class="line">    index index.html index.htm index.nginx-debian.html;</span><br><span class="line">    location / &#123;</span><br><span class="line">        try_files <span class="variable">$uri</span> <span class="variable">$uri</span>/ =404;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location /blog/CC &#123;</span><br><span class="line">        proxy_redirect off;</span><br><span class="line">        proxy_pass http://v2ray;</span><br><span class="line">        proxy_http_version 1.1;</span><br><span class="line">        proxy_set_header Upgrade <span class="variable">$http_upgrade</span>;</span><br><span class="line">        proxy_set_header Connection <span class="string">"upgrade"</span>;</span><br><span class="line">        proxy_set_header Host <span class="variable">$http_host</span>;</span><br><span class="line">        proxy_read_timeout 300s;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h2><p>在Ubutnu上Nginx有一个Bug，<code>nginx.service: Failed to read PID from file /run/nginx.pid: Invalid argument</code>，具体信息：<a href="https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1581864" target="_blank" rel="noopener external nofollow noreferrer">https://bugs.launchpad.net/ubuntu/+source/nginx/+bug/1581864</a></p>
+<p>使用root用户执行以下命令即可。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mkdir /etc/systemd/system/nginx.service.d</span><br><span class="line"><span class="built_in">printf</span> <span class="string">"[Service]\nExecStartPost=/bin/sleep 0.1\n"</span> &gt; /etc/systemd/system/nginx.service.d/override.conf</span><br><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl restart nginx</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">推荐文章</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\archives\95d3d41d.html" rel="bookmark">Caddy正向代理</a></div>
+    </li>
+  </ul>
+
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="cc 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.png" alt="cc 支付宝">
+        <p>支付宝</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/paypal.png" alt="cc PayPal">
+        <p>PayPal</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>cc
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cc2048.com/archives/869e664c.html" title="WebSocket+TLS+Caddy+V2ray+CDN">https://cc2048.com/archives/869e664c.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/caddy/" rel="tag"><i class="fa fa-tag"></i> caddy</a>
+              <a href="/tags/v2ray/" rel="tag"><i class="fa fa-tag"></i> v2ray</a>
+              <a href="/tags/vps/" rel="tag"><i class="fa fa-tag"></i> vps</a>
+              <a href="/tags/bbr/" rel="tag"><i class="fa fa-tag"></i> bbr</a>
+              <a href="/tags/nginx/" rel="tag"><i class="fa fa-tag"></i> nginx</a>
+              <a href="/tags/cloudflare/" rel="tag"><i class="fa fa-tag"></i> cloudflare</a>
+              <a href="/tags/cdn/" rel="tag"><i class="fa fa-tag"></i> cdn</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/archives/bd4e69fb.html" rel="prev" title="acme.sh申请免费证书">
+      <i class="fa fa-chevron-left"></i> acme.sh申请免费证书
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/archives/c4788f70.html" rel="next" title="Squid代理服务器搭建">
+      Squid代理服务器搭建 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#更新系统"><span class="nav-number">2.</span> <span class="nav-text">更新系统</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#V2ray"><span class="nav-number">3.</span> <span class="nav-text">V2ray</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#脚本安装"><span class="nav-number">3.1.</span> <span class="nav-text">脚本安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编辑配置"><span class="nav-number">3.2.</span> <span class="nav-text">编辑配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动程序"><span class="nav-number">3.3.</span> <span class="nav-text">启动程序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Caddy"><span class="nav-number">4.</span> <span class="nav-text">Caddy</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#软件安装"><span class="nav-number">4.1.</span> <span class="nav-text">软件安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编辑配置-1"><span class="nav-number">4.2.</span> <span class="nav-text">编辑配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#启动程序-1"><span class="nav-number">4.3.</span> <span class="nav-text">启动程序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#BBR加速"><span class="nav-number">5.</span> <span class="nav-text">BBR加速</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#CDN"><span class="nav-number">6.</span> <span class="nav-text">CDN</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#注册域名"><span class="nav-number">6.1.</span> <span class="nav-text">注册域名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cloudflare"><span class="nav-number">6.2.</span> <span class="nav-text">Cloudflare</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#客户端"><span class="nav-number">7.</span> <span class="nav-text">客户端</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Nginx"><span class="nav-number">8.</span> <span class="nav-text">Nginx</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#安装配置"><span class="nav-number">8.1.</span> <span class="nav-text">安装配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#注意"><span class="nav-number">8.2.</span> <span class="nav-text">注意</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="cc"
+      src="/images/avatar.gif">
+  <p class="site-author-name" itemprop="name">cc</p>
+  <div class="site-description" itemprop="description">234</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/caichao0519" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;caichao0519" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-github"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yourname@gmail.com" title="E-Mail → mailto:yourname@gmail.com" rel="noopener external nofollow noreferrer" target="_blank"><i class="fa fa-fw fa-envelope"></i></a>
+      </span>
+  </div>
+
+
+
+    <div class="links-of-blogroll motion-element links-of-blogroll-block">
+      <div class="links-of-blogroll-title">
+        <!-- modify icon to fire by szw -->
+        <i class="fa fa-history fa-" aria-hidden="true"></i>
+        近期文章
+      </div>
+      <ul class="links-of-blogroll-list">
+        
+        
+          <li>
+            <a href="/archives/95d3d41d.html" title="Caddy正向代理" target="_blank">Caddy正向代理</a>
+          </li>
+        
+          <li>
+            <a href="/archives/722501a8.html" title="diskerr" target="_blank">diskerr</a>
+          </li>
+        
+          <li>
+            <a href="/archives/c4788f70.html" title="Squid代理服务器搭建" target="_blank">Squid代理服务器搭建</a>
+          </li>
+        
+          <li>
+            <a href="/archives/869e664c.html" title="WebSocket+TLS+Caddy+V2ray+CDN" target="_blank">WebSocket+TLS+Caddy+V2ray+CDN</a>
+          </li>
+        
+          <li>
+            <a href="/archives/bd4e69fb.html" title="acme.sh申请免费证书" target="_blank">acme.sh申请免费证书</a>
+          </li>
+        
+      </ul>
+    </div>
+
+
+<div style="">
+  <canvas id="canvas" style="width:60%;">当前浏览器不支持canvas，请更换浏览器后再试</canvas>
+</div>
+<script>
+(function(){
+
+   var digit=
+    [
+        [
+            [0,0,1,1,1,0,0],
+            [0,1,1,0,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,0,1,1,0],
+            [0,0,1,1,1,0,0]
+        ],//0
+        [
+            [0,0,0,1,1,0,0],
+            [0,1,1,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [1,1,1,1,1,1,1]
+        ],//1
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,0,0,0],
+            [0,1,1,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,0,0,0,1,1],
+            [1,1,1,1,1,1,1]
+        ],//2
+        [
+            [1,1,1,1,1,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//3
+        [
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,1,0],
+            [0,0,1,1,1,1,0],
+            [0,1,1,0,1,1,0],
+            [1,1,0,0,1,1,0],
+            [1,1,1,1,1,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,1,1]
+        ],//4
+        [
+            [1,1,1,1,1,1,1],
+            [1,1,0,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,1,1,1,1,0],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//5
+        [
+            [0,0,0,0,1,1,0],
+            [0,0,1,1,0,0,0],
+            [0,1,1,0,0,0,0],
+            [1,1,0,0,0,0,0],
+            [1,1,0,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//6
+        [
+            [1,1,1,1,1,1,1],
+            [1,1,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,0,0,1,1,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0],
+            [0,0,1,1,0,0,0]
+        ],//7
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,1,1,0]
+        ],//8
+        [
+            [0,1,1,1,1,1,0],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [1,1,0,0,0,1,1],
+            [0,1,1,1,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,0,1,1],
+            [0,0,0,0,1,1,0],
+            [0,0,0,1,1,0,0],
+            [0,1,1,0,0,0,0]
+        ],//9
+        [
+            [0,0,0,0,0,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,1,1,1,0,0],
+            [0,0,0,0,0,0,0]
+        ]//:
+    ];
+
+var canvas = document.getElementById('canvas');
+
+if(canvas.getContext){
+    var cxt = canvas.getContext('2d');
+    //声明canvas的宽高
+    var H = 100,W = 700;
+    canvas.height = H;
+    canvas.width = W;
+    cxt.fillStyle = '#f00';
+    cxt.fillRect(10,10,50,50);
+
+    //存储时间数据
+    var data = [];
+    //存储运动的小球
+    var balls = [];
+    //设置粒子半径
+    var R = canvas.height/20-1;
+    (function(){
+        var temp = /(\d)(\d):(\d)(\d):(\d)(\d)/.exec(new Date());
+        //存储时间数字，由十位小时、个位小时、冒号、十位分钟、个位分钟、冒号、十位秒钟、个位秒钟这7个数字组成
+        data.push(temp[1],temp[2],10,temp[3],temp[4],10,temp[5],temp[6]);
+    })();
+
+    /*生成点阵数字*/
+    function renderDigit(index,num){
+        for(var i = 0; i < digit[num].length; i++){
+            for(var j = 0; j < digit[num][i].length; j++){
+                if(digit[num][i][j] == 1){
+                    cxt.beginPath();
+                    cxt.arc(14*(R+2)*index + j*2*(R+1)+(R+1),i*2*(R+1)+(R+1),R,0,2*Math.PI);
+                    cxt.closePath();
+                    cxt.fill();
+                }
+            }
+        }
+    }
+
+    /*更新时钟*/
+    function updateDigitTime(){
+        var changeNumArray = [];
+        var temp = /(\d)(\d):(\d)(\d):(\d)(\d)/.exec(new Date());
+        var NewData = [];
+        NewData.push(temp[1],temp[2],10,temp[3],temp[4],10,temp[5],temp[6]);
+        for(var i = data.length-1; i >=0 ; i--){
+            //时间发生变化
+            if(NewData[i] !== data[i]){
+                //将变化的数字值和在data数组中的索引存储在changeNumArray数组中
+                changeNumArray.push(i+'_'+(Number(data[i])+1)%10);
+            }
+        }
+        //增加小球
+        for(var i = 0; i< changeNumArray.length; i++){
+            addBalls.apply(this,changeNumArray[i].split('_'));
+        }
+        data = NewData.concat();
+    }
+
+    /*更新小球状态*/
+    function updateBalls(){
+        for(var i = 0; i < balls.length; i++){
+            balls[i].stepY += balls[i].disY;
+            balls[i].x += balls[i].stepX;
+            balls[i].y += balls[i].stepY;
+            if(balls[i].x > W + R || balls[i].y > H + R){
+                balls.splice(i,1);
+                i--;
+            }
+        }
+    }
+
+    /*增加要运动的小球*/
+    function addBalls(index,num){
+        var numArray = [1,2,3];
+        var colorArray =  ["#3BE","#09C","#A6C","#93C","#9C0","#690","#FB3","#F80","#F44","#C00"];
+        for(var i = 0; i < digit[num].length; i++){
+            for(var j = 0; j < digit[num][i].length; j++){
+                if(digit[num][i][j] == 1){
+                    var ball = {
+                        x:14*(R+2)*index + j*2*(R+1)+(R+1),
+                        y:i*2*(R+1)+(R+1),
+                        stepX:Math.floor(Math.random() * 4 -2),
+                        stepY:-2*numArray[Math.floor(Math.random()*numArray.length)],
+                        color:colorArray[Math.floor(Math.random()*colorArray.length)],
+                        disY:1
+                    };
+                    balls.push(ball);
+                }
+            }
+        }
+    }
+
+    /*渲染*/
+    function render(){
+        //重置画布宽度，达到清空画布的效果
+        canvas.height = 100;
+        //渲染时钟
+        for(var i = 0; i < data.length; i++){
+            renderDigit(i,data[i]);
+        }
+        //渲染小球
+        for(var i = 0; i < balls.length; i++){
+            cxt.beginPath();
+            cxt.arc(balls[i].x,balls[i].y,R,0,2*Math.PI);
+            cxt.fillStyle = balls[i].color;
+            cxt.closePath();
+            cxt.fill();
+        }
+    }
+
+    clearInterval(oTimer);
+    var oTimer = setInterval(function(){
+        //更新时钟
+        updateDigitTime();
+        //更新小球状态
+        updateBalls();
+        //渲染
+        render();
+    },50);
+}
+
+})();
+</script>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">cc</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数：</span>
+    <span title="站点总字数">23k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">21 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org/" class="theme-link" rel="noopener external nofollow noreferrer" target="_blank">NexT.Gemini</a> v7.7.2
+  </div><div class="translate-style">
+繁/简：<a id="translateLink" href="javascript:translatePage();" rel="external nofollow noreferrer">繁体
+</a>
+</div>
+<script type="text/javascript" src="/js/tw_cn.js"></script>
+<script type="text/javascript">
+var defaultEncoding = 2; //网站编写字体是否繁体，1-繁体，2-简体
+var translateDelay = 0; //延迟时间,若不在前, 要设定延迟翻译时间, 如100表示100ms,默认为0
+var cookieDomain = "http://localhost:4000/"; //Cookie地址, 一定要设定, 通常为你的网址
+var msgToTraditionalChinese = "繁体"; //此处可以更改为你想要显示的文字
+var msgToSimplifiedChinese = "简体"; //同上，但两处均不建议更改
+var translateButtonId = "translateLink"; //默认互换id
+translateInitilization();
+</script>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'WiMNk2IinETjfvFFjazVE1UW-MdYXbMMI',
+      appKey     : 'yOvM4m0ApyT1tOmz0fziJg8C',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
