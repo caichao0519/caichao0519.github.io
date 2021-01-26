@@ -59,7 +59,7 @@
     <title>硬盘坏道修复</title>
     <url>/archives/722501a8.html</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘<code>read failure</code>了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是<code>badblocks</code>修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。</p>
-<p><img src="https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png" alt="SMART测试结果"></p>
+<p><img src="/images/diserr-1.png" alt="SMART测试结果"></p>
 <p>之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。</p>
 <a id="more"></a>
 
@@ -549,12 +549,24 @@
     <title>Hexo命令汇总</title>
     <url>/archives/8bb4c5fa.html</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>hexo的命令并不算多，常用命令更少，基本使用一遍就能记得。在此记录一下，方便查找。</p>
-<h1 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h1><p>新建文章<br><code>hexo n &quot;my-first-blog&quot;</code> </p>
-<p>新建草稿<br><code>hexo n draft &quot;my-first-blog&quot;</code> </p>
-<p>移动草稿到正文<br><code>hexo publish &quot;my-first-blog&quot;</code> </p>
-<p>清除缓存、静态文件并生成网站静态文件<br><code>hexo clean &amp;&amp; hexo g</code><br><code>hexo g -f</code></p>
-<p>生成网站静态文件并部署到git<br><code>hexo g -d</code>  </p>
-<p>生成网站静态文件并再本地启动预览<br><code>hexo g &amp;&amp; hexo s</code></p>
+<h1 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h1><p>新建文章</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n &quot;my-first-blog&quot;</span><br></pre></td></tr></table></figure>
+
+<p>新建草稿</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n draft &quot;my-first-blog&quot;</span><br></pre></td></tr></table></figure>
+
+<p>移动草稿到正文</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo publish &quot;my-first-blog&quot;</span><br></pre></td></tr></table></figure>
+
+<p>清除缓存、静态文件并生成网站静态文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo clean &amp;&amp; hexo g </span><br><span class="line">hexo g -f</span><br></pre></td></tr></table></figure>
+
+<p>生成网站静态文件并部署到git</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo g -d</span><br></pre></td></tr></table></figure>
+
+<p>生成网站静态文件并再本地启动预览</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo g &amp;&amp; hexo s</span><br></pre></td></tr></table></figure>
+
 <a id="more"></a>
 
 <h1 id="命令说明"><a href="#命令说明" class="headerlink" title="命令说明"></a>命令说明</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hexo n &quot;my-first-blog&quot;</span><br></pre></td></tr></table></figure>

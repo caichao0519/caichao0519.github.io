@@ -46,12 +46,12 @@
     <link href="https://cc2048.com/archives/722501a8.html"/>
     <id>https://cc2048.com/archives/722501a8.html</id>
     <published>2020-06-26T22:38:32.000Z</published>
-    <updated>2021-01-26T08:04:10.009Z</updated>
+    <updated>2021-01-26T09:31:18.427Z</updated>
     
     <summary type="html">
     
       &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘&lt;code&gt;read failure&lt;/code&gt;了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是&lt;code&gt;badblocks&lt;/code&gt;修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;https://pic.cc2048.top:8443/i/2020/06/26/10wz90t.png&quot; alt=&quot;SMART测试结果&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/images/diserr-1.png&quot; alt=&quot;SMART测试结果&quot;&gt;&lt;/p&gt;
 &lt;p&gt;之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。&lt;/p&gt;
     
     </summary>
@@ -230,17 +230,28 @@
     <link href="https://cc2048.com/archives/8bb4c5fa.html"/>
     <id>https://cc2048.com/archives/8bb4c5fa.html</id>
     <published>2020-03-13T11:32:24.000Z</published>
-    <updated>2021-01-26T08:43:02.738Z</updated>
+    <updated>2021-01-26T09:28:05.530Z</updated>
     
     <summary type="html">
     
       &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;hexo的命令并不算多，常用命令更少，基本使用一遍就能记得。在此记录一下，方便查找。&lt;/p&gt;
-&lt;h1 id=&quot;常用命令&quot;&gt;&lt;a href=&quot;#常用命令&quot; class=&quot;headerlink&quot; title=&quot;常用命令&quot;&gt;&lt;/a&gt;常用命令&lt;/h1&gt;&lt;p&gt;新建文章&lt;br&gt;&lt;code&gt;hexo n &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
-&lt;p&gt;新建草稿&lt;br&gt;&lt;code&gt;hexo n draft &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
-&lt;p&gt;移动草稿到正文&lt;br&gt;&lt;code&gt;hexo publish &amp;quot;my-first-blog&amp;quot;&lt;/code&gt; &lt;/p&gt;
-&lt;p&gt;清除缓存、静态文件并生成网站静态文件&lt;br&gt;&lt;code&gt;hexo clean &amp;amp;&amp;amp; hexo g&lt;/code&gt;&lt;br&gt;&lt;code&gt;hexo g -f&lt;/code&gt;&lt;/p&gt;
-&lt;p&gt;生成网站静态文件并部署到git&lt;br&gt;&lt;code&gt;hexo g -d&lt;/code&gt;  &lt;/p&gt;
-&lt;p&gt;生成网站静态文件并再本地启动预览&lt;br&gt;&lt;code&gt;hexo g &amp;amp;&amp;amp; hexo s&lt;/code&gt;&lt;/p&gt;
+&lt;h1 id=&quot;常用命令&quot;&gt;&lt;a href=&quot;#常用命令&quot; class=&quot;headerlink&quot; title=&quot;常用命令&quot;&gt;&lt;/a&gt;常用命令&lt;/h1&gt;&lt;p&gt;新建文章&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo n &amp;quot;my-first-blog&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;新建草稿&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo n draft &amp;quot;my-first-blog&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;移动草稿到正文&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo publish &amp;quot;my-first-blog&amp;quot;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;清除缓存、静态文件并生成网站静态文件&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo clean &amp;amp;&amp;amp; hexo g &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;hexo g -f&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;生成网站静态文件并部署到git&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo g -d&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;生成网站静态文件并再本地启动预览&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;hexo g &amp;amp;&amp;amp; hexo s&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
     
     </summary>
     
