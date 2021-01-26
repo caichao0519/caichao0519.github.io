@@ -165,16 +165,25 @@
   </entry>
   
   <entry>
-    <title>Git代理配置</title>
+    <title>Git常用操作</title>
     <link href="https://cc2048.com/archives/aa7e6513.html"/>
     <id>https://cc2048.com/archives/aa7e6513.html</id>
     <published>2020-04-29T20:27:53.000Z</published>
-    <updated>2020-12-17T06:38:52.079Z</updated>
+    <updated>2021-01-26T08:38:06.482Z</updated>
     
     <summary type="html">
     
-      &lt;h1 id=&quot;Git代理设置、查看、取消代理&quot;&gt;&lt;a href=&quot;#Git代理设置、查看、取消代理&quot; class=&quot;headerlink&quot; title=&quot;Git代理设置、查看、取消代理&quot;&gt;&lt;/a&gt;Git代理设置、查看、取消代理&lt;/h1&gt;&lt;p&gt;设置代理：&lt;/p&gt;
-&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;2&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git config --global http.proxy &amp;#39;http:&amp;#x2F;&amp;#x2F;127.0.0.1:8080&amp;#39; &lt;/span&gt;&lt;br&gt;&lt;span class=&quot;line&quot;&gt;git config --global https.proxy &amp;#39;https:&amp;#x2F;&amp;#x2F;127.0.0.1:8443&amp;#39;&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+      &lt;h1 id=&quot;指定分支上传&quot;&gt;&lt;a href=&quot;#指定分支上传&quot; class=&quot;headerlink&quot; title=&quot;指定分支上传&quot;&gt;&lt;/a&gt;指定分支上传&lt;/h1&gt;&lt;p&gt;查看本地分支情况&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git branch -a&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;添加所有改变的文件&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git add .&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;提交代码到本地仓库&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git commit -m “注释”&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
+
+&lt;p&gt;push到指定分支&lt;/p&gt;
+&lt;figure class=&quot;highlight plain&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;1&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line&quot;&gt;git push origin hexo&lt;/span&gt;&lt;br&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/figure&gt;
     
     </summary>
     
@@ -193,7 +202,7 @@
     <link href="https://cc2048.com/archives/42009ab4.html"/>
     <id>https://cc2048.com/archives/42009ab4.html</id>
     <published>2020-04-29T20:23:18.000Z</published>
-    <updated>2020-12-17T06:38:52.636Z</updated>
+    <updated>2021-01-26T08:21:05.472Z</updated>
     
     <summary type="html">
     

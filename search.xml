@@ -461,11 +461,34 @@
       </tags>
   </entry>
   <entry>
-    <title>Git代理配置</title>
+    <title>Git常用操作</title>
     <url>/archives/aa7e6513.html</url>
-    <content><![CDATA[<h1 id="Git代理设置、查看、取消代理"><a href="#Git代理设置、查看、取消代理" class="headerlink" title="Git代理设置、查看、取消代理"></a>Git代理设置、查看、取消代理</h1><p>设置代理：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#39;http:&#x2F;&#x2F;127.0.0.1:8080&#39; </span><br><span class="line">git config --global https.proxy &#39;https:&#x2F;&#x2F;127.0.0.1:8443&#39;</span><br></pre></td></tr></table></figure>
+    <content><![CDATA[<h1 id="指定分支上传"><a href="#指定分支上传" class="headerlink" title="指定分支上传"></a>指定分支上传</h1><p>查看本地分支情况</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git branch -a</span><br></pre></td></tr></table></figure>
+
+<p>添加所有改变的文件</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git add .</span><br></pre></td></tr></table></figure>
+
+<p>提交代码到本地仓库</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git commit -m “注释”</span><br></pre></td></tr></table></figure>
+
+<p>push到指定分支</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git push origin hexo</span><br></pre></td></tr></table></figure>
+
 <a id="more"></a>
+
+<h1 id="恢复本地误删文件"><a href="#恢复本地误删文件" class="headerlink" title="恢复本地误删文件"></a>恢复本地误删文件</h1><p>查看本地改动的记录</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git status</span><br></pre></td></tr></table></figure>
+
+<p>指向被删除的文件或文件夹</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git reset HEAD [被删除的文件或文件夹]</span><br></pre></td></tr></table></figure>
+
+<p>恢复被删除的文件或文件夹</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git checkout [被删除的文件或文件夹]</span><br></pre></td></tr></table></figure>
+
+<h1 id="Git代理设置、查看、取消代理"><a href="#Git代理设置、查看、取消代理" class="headerlink" title="Git代理设置、查看、取消代理"></a>Git代理设置、查看、取消代理</h1><p>设置代理：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global http.proxy &#39;http:&#x2F;&#x2F;127.0.0.1:8080&#39; </span><br><span class="line">git config --global https.proxy &#39;https:&#x2F;&#x2F;127.0.0.1:8443&#39;</span><br></pre></td></tr></table></figure>
+
 
 <p>查看代理：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git config --global --get http.proxy</span><br><span class="line">git config --global --get https.proxy</span><br></pre></td></tr></table></figure>
