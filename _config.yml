@@ -105,7 +105,7 @@ deploy:
   type: git
   repository: 
     github: git@github.com:caichao0519/caichao0519.github.io.git
-    coding: git@e.coding.net:caichao0519/caichao0519.git
+#    coding: git@e.coding.net:caichao0519/caichao0519.git
   branch: master
 
 # ---------------------------------------------------------------
