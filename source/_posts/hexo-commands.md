@@ -17,23 +17,41 @@ hexo的命令并不算多，常用命令更少，基本使用一遍就能记得�
 
 # 常用命令
 新建文章
-`hexo n "my-first-blog"` 
+
+```
+hexo n "my-first-blog" 
+```
 
 新建草稿
-`hexo n draft "my-first-blog"` 
+
+```
+hexo n draft "my-first-blog" 
+```
 
 移动草稿到正文
-`hexo publish "my-first-blog"` 
+
+```
+hexo publish "my-first-blog" 
+```
 
 清除缓存、静态文件并生成网站静态文件
-`hexo clean && hexo g` 
-`hexo g -f`
+
+```
+hexo clean && hexo g 
+hexo g -f
+```
 
 生成网站静态文件并部署到git
-`hexo g -d`  
+
+```
+hexo g -d  
+```
 
 生成网站静态文件并再本地启动预览
-`hexo g && hexo s`
+
+```
+hexo g && hexo s
+```
 
 <!--more-->
 
