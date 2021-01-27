@@ -59,7 +59,7 @@
     <title>硬盘坏道修复</title>
     <url>/archives/722501a8.html</url>
     <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘<code>read failure</code>了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是<code>badblocks</code>修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。</p>
-<p><img src="diskerr/1.png" alt="SMART测试结果"></p>
+<p><img src="../images/diskerr/1.png" alt="SMART测试结果"></p>
 <p>之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。</p>
 <a id="more"></a>
 
