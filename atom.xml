@@ -46,12 +46,12 @@
     <link href="https://cc2048.com/archives/722501a8.html"/>
     <id>https://cc2048.com/archives/722501a8.html</id>
     <published>2020-06-26T22:38:32.000Z</published>
-    <updated>2021-01-26T09:38:09.792Z</updated>
+    <updated>2021-01-27T08:06:02.724Z</updated>
     
     <summary type="html">
     
       &lt;h1 id=&quot;前言&quot;&gt;&lt;a href=&quot;#前言&quot; class=&quot;headerlink&quot; title=&quot;前言&quot;&gt;&lt;/a&gt;前言&lt;/h1&gt;&lt;p&gt;家里NAS突然死机了，死机原因有没有找到，但是用SMART检查因硬盘的时候一块盘&lt;code&gt;read failure&lt;/code&gt;了，在网上找了半天解决方法， 大多都是说扫描出坏块然后把坏块跳过，只有一篇老外N年前写的文章说是可以用dd重写坏块抢救下。 最后自然是修复了，但是用的是&lt;code&gt;badblocks&lt;/code&gt;修复的，本次记录一下。怪自己太懒，没做邮件通知和硬盘自检，拖延症晚期。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;/images/diskerr/1.png&quot; alt=&quot;SMART测试结果&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;diskerr/1.png&quot; alt=&quot;SMART测试结果&quot;&gt;&lt;/p&gt;
 &lt;p&gt;之前没截图，这个是最后已经恢复的图片，可以看到中间几个检测到10%就过不去了。&lt;/p&gt;
     
     </summary>
