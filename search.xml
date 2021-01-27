@@ -332,12 +332,12 @@
 <p>Cloudflare注册非常简单，有个邮箱就行了，<a href="https://dash.cloudflare.com/" target="_blank" rel="noopener external nofollow noreferrer">Cloudflare注册地址</a>。</p>
 <p><strong>域名管理</strong></p>
 <p>登录Cloudflare，会让add site，填入刚注册的域名即可。</p>
-<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png" alt="添加域名"></p>
+<p><img src="../images/vmess-install/12wcifl.png" alt="添加域名"></p>
 <p>填完域名后会提示修改Nameservers，需要到域名注册商处将Nameservers改为Cloudflare的Nameservers。</p>
-<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vyc12.png" alt="DNS添加"></p>
+<p><img src="../images/vmess-install/12vyc12.png" alt="DNS添加"></p>
 <p><strong>配置SSL/TLS</strong></p>
 <p>配置SSL/TLS，选择Full（strict），选择Flexble会导致黄色云朵点亮的时候，请求失败。</p>
-<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12vs1gz.png" alt="SSL/TLS"></p>
+<p><img src="../images/vmess-install/12vs1gz.png" alt="SSL/TLS"></p>
 <h1 id="客户端"><a href="#客户端" class="headerlink" title="客户端"></a>客户端</h1><p>官方文档里面又有下载地址：<a href="https://www.v2ray.com/awesome/tools.html" target="_blank" rel="noopener external nofollow noreferrer">https://www.v2ray.com/awesome/tools.html</a></p>
 <p>IOS：Shadowrocket ，收费的，且国区账号下不到了，需要注册美区账号，比较麻烦的</p>
 <p>Android：V2RayNG <a href="https://play.google.com/store/apps/details?id=com.v2ray.ang" target="_blank" rel="noopener external nofollow noreferrer">Play Store </a>  |  <a href="https://github.com/2dust/v2rayNG" target="_blank" rel="noopener external nofollow noreferrer">GitHub</a></p>
@@ -416,7 +416,7 @@
 <p><strong>acme.sh</strong> 目前支持 cloudflare, dnspod, cloudxns, godaddy 以及 ovh 等数十种解析商的自动集成，即通过API接口，自动添加TXT记录，完成自动验证。</p>
 <p>具体接口参数可以参看官方文档：<a href="https://github.com/acmesh-official/acme.sh/wiki/dnsapi" target="_blank" rel="noopener external nofollow noreferrer">https://github.com/acmesh-official/acme.sh/wiki/dnsapi</a></p>
 <p>以 Cloudflare 为例, 先登录到 Cloudflare  账号, 生成 <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener external nofollow noreferrer">API Key</a>，查看Global API Key</p>
-<p><img src="https://pic.cc2048.top:8443/i/2020/05/02/12wd6zz.png" alt="Cloudflare API key"></p>
+<p><img src="../images/acme-install/12wd6zz.png" alt="Cloudflare API key"></p>
 <h3 id="设置环境变量"><a href="#设置环境变量" class="headerlink" title="设置环境变量"></a>设置环境变量</h3><p>就是Cloudflare的全局Key和注册邮箱</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">export</span> CF_Key=<span class="string">"sdfsdfsdfljlbjkljlkjsdfoiwje"</span></span><br><span class="line"><span class="built_in">export</span> CF_Email=<span class="string">"xxxx@sss.com"</span></span><br></pre></td></tr></table></figure>
 
@@ -627,7 +627,7 @@
 <p>3300元用5年，看着挺核算的是吧。但是如果只有存文件的和下载的需求，百度网盘就能满足你。</p>
 <p>百度超级网盘是260块一年，除了你的隐私不能保证外，都挺好的。3300元，也已经够百度超级网盘买10多年了得超级会员了。仔细考虑自己组NAS的需求，千万别拍脑袋就买了。</p>
 <p>自己折腾是比较费事的，还得算上后期维护成本。所以推荐非技术侧用户直接买成品NAS，并且成品NAS的耗电还会更低，使用寿命也比自组的更长。</p>
-<h1 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h1><p><img src="https://nextcloud.cc2048.top:8443/s/H7CZKmdxjdgxR9q/preview" alt="整体结构" title="点击查看大图"> </p>
+<h1 id="整体结构"><a href="#整体结构" class="headerlink" title="整体结构"></a>整体结构</h1><p><img src="../images/nas-foreword/1086-478-max.png" alt="整体结构"> </p>
 ]]></content>
       <categories>
         <category>NAS</category>
