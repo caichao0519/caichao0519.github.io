@@ -92,7 +92,7 @@ DNS方式需要在域名商添加一条TXT的解析记录，以验证域名所�
 
 以 Cloudflare 为例, 先登录到 Cloudflare  账号, 生成 [API Key](https://dash.cloudflare.com/profile/api-tokens)，查看Global API Key
 
-![Cloudflare API key](https://pic.cc2048.top:8443/i/2020/05/02/12wd6zz.png)
+![Cloudflare API key](../images/acme-install/12wd6zz.png)
 
 ### 设置环境变量
 

@@ -51,4 +51,5 @@ categories:
 
 # 整体结构
 
-![整体结构]( https://nextcloud.cc2048.top:8443/s/H7CZKmdxjdgxR9q/preview "点击查看大图") 
+![整体结构](../images/nas-foreword/1086-478-max.png) 
+

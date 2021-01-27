@@ -298,19 +298,19 @@ Cloudflare注册非常简单，有个邮箱就行了，[Cloudflare注册地址](
 
 登录Cloudflare，会让add site，填入刚注册的域名即可。
 
-![添加域名](https://pic.cc2048.top:8443/i/2020/05/02/12wcifl.png)
+![添加域名](../images/vmess-install/12wcifl.png)
 
 填完域名后会提示修改Nameservers，需要到域名注册商处将Nameservers改为Cloudflare的Nameservers。
 
 
 
-![DNS添加](https://pic.cc2048.top:8443/i/2020/05/02/12vyc12.png)
+![DNS添加](../images/vmess-install/12vyc12.png)
 
 **配置SSL/TLS**
 
 配置SSL/TLS，选择Full（strict），选择Flexble会导致黄色云朵点亮的时候，请求失败。
 
-![SSL/TLS](https://pic.cc2048.top:8443/i/2020/05/02/12vs1gz.png)
+![SSL/TLS](../images/vmess-install/12vs1gz.png)
 
 
 
